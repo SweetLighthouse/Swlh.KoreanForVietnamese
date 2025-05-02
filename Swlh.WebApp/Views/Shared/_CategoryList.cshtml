@@ -1,0 +1,56 @@
+﻿@inject IWebHostEnvironment _env
+@using System.Text.Json
+@using Swlh.WebApp.Application.Dtos.NavItems
+@{
+    var fileName = "nav.json";
+    var filePath = System.IO.Path.Combine(_env.ContentRootPath, "wwwroot", "PrivateFiles", fileName);
+    var json = File.ReadAllText(filePath);
+    var items = JsonSerializer.Deserialize<List<NavItem>>(json);
+}
+@foreach (var item in items)
+{
+    bool hasHref = !string.IsNullOrWhiteSpace(item.Href);
+    bool hasDropdown = item.Dropdown != null && item.Dropdown.Any();
+
+    if (hasHref && !hasDropdown)
+    {
+        <li class="nav-item">
+            <a class="btn btn-light nav-link text-dark py-3" href="@item.Href">@item.Text</a>
+        </li>
+    }
+    else if (!hasHref && hasDropdown)
+    {
+        <li class="nav-item">
+            <div class="btn-group">
+                <button type="button" class="btn btn-light nav-link text-dark py-3 dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                    @item.Text
+                </button>
+                <ul class="m-0 dropdown-menu">
+                    @foreach (var a in item.Dropdown!)
+                    {
+                        <li class="nav-item">
+                            <a class="dropdown-item" href="@a.Href">@a.Text</a>
+                        </li>
+                    }
+                </ul>
+            </div>
+        </li>
+    }
+    else if (hasHref && hasDropdown)
+    {
+        <li class="nav-item">
+            <div class="btn-group d-flex align-items-center">
+                <a href="@item.Href" class="nav-link text-dark py-3 btn btn-light">@item.Text</a>
+                <button type="button" class="nav-link text-dark py-3 dropdown-toggle btn btn-light" data-bs-toggle="dropdown" aria-expanded="false"></button>
+                <ul class="m-0 dropdown-menu">
+                    @foreach (var a in item.Dropdown!)
+                    {
+                        <li class="nav-item">
+                            <a class="dropdown-item" href="@a.Href">@a.Text</a>
+                        </li>
+                    }
+                </ul>
+            </div>
+        </li>
+    }
+}

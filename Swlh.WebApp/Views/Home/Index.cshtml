@@ -1,0 +1,14 @@
+﻿@inject IHttpClientFactory httpClientFactory
+@inject IWebHostEnvironment env
+@{
+    ViewData["Title"] = "Trang chủ";
+
+    var fileName = "_Homepage.json";
+    var filePath = System.IO.Path.Combine(env.ContentRootPath, "wwwroot", "PrivateFiles", fileName);
+    var fileContent = System.IO.File.Exists(filePath) ? System.IO.File.ReadAllText(filePath) : "";
+}
+
+@Html.Raw(fileContent)
+
+
+

@@ -1,0 +1,625 @@
+﻿@using HtmlAgilityPack
+@using Microsoft.EntityFrameworkCore
+@using Swlh.WebApp.Application.Dtos.NaverVikoDtos
+@using Swlh.WebApp.Controllers
+@using Swlh.WebApp.Domain.Entities
+@using System.Text.RegularExpressions
+@using System.Net
+@inject Swlh.WebApp.Context.MainDbContext context
+@model SearchMaybek
+
+@{
+    ViewData["Title"] = "Tìm kiếm";
+    string query = Context.Request.Query.TryGetValue("query", out var val) ? val.ToString() : string.Empty;
+    Guid.TryParse(Context.Session.GetString("Id"), out var id);
+
+    // Step 1: Get all words that are similar (contain query)
+    var allSimilars = context.Words
+    .Where(w => w.WordVn.Contains(query) || w.WordKr.Contains(query))
+    .ToList();
+
+    // Step 2: Split into exact and actual similar words
+    var exacts = allSimilars.Where(w => w.WordVn == query || w.WordKr == query).ToList();
+    var similars = allSimilars.Where(w => !(w.WordVn == query || w.WordKr == query)).ToList();
+}
+
+@if (string.IsNullOrWhiteSpace(query))
+{
+    <p>Chuỗi tìm kiếm trống. Vui lòng nhập từ khoá.</p>
+    return;
+}
+
+<div class="container-fluid">
+    <div class="row">
+
+
+        <div class="col-lg-9 order-lg-2">
+
+            <h3 class="mb-3">
+                Có @exacts.Count kết quả.
+                <strong>@query</strong>
+                được tra cứu @context.Keywords.Find(query)?.SearchCount lần.
+            </h3>
+
+            @if (!exacts.Any())
+            {
+                <p>Hãy kiểm tra lại từ bạn muốn tìm. </p>
+                <p>Nếu bạn biết nghĩa của từ này, hãy góp ý dưới đây.</p>
+            }
+
+            @{
+                var forceQuery = Model?.forceQuery;
+                if (!string.IsNullOrWhiteSpace(forceQuery))
+                {
+                    <p>
+                        Có phải bạn muốn tìm
+                        <a asp-controller="@nameof(SearchController)[..^10]"
+                           asp-action="@nameof(SearchController.Index)"
+                           asp-route-query="@forceQuery">
+                            @forceQuery
+                        </a>
+                        ?
+                    </p>
+                }
+            }
+
+            @{
+                var revert = Model?.revert;
+                if (!string.IsNullOrWhiteSpace(revert))
+                {
+                    <p>
+                        Từ vựng liên quan
+                        <a asp-controller="@nameof(SearchController)[..^10]"
+                           asp-action="@nameof(SearchController.Index)"
+                           asp-route-query="@revert">
+                            @revert
+                        </a>
+                        ?
+                    </p>
+                }
+            }
+
+            @foreach (var word in exacts)
+            {
+                <div class="mb-3 p-3 border rounded bg-light position-relative">
+                    <!-- Options dropdown -->
+                    <!-- <div class="dropdown position-absolute top-0 end-0 m-2">
+                    <button class="btn btn-sm btn-light" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i>⋯</i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                    </ul>
+                    </div> -->
+                    <!-- Content -->
+                    <p class="mb-2">
+                        <span class="fw-bold">@word.WordVn</span>
+                        @if (!string.IsNullOrWhiteSpace(word.Pronunciation))
+                        {
+                            <span class="fst-italic small">(@word.Pronunciation)</span>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(word.Type))
+                        {
+                            <span class="fw-semibold">(@word.Type)</span>
+                        }
+                        <span>:</span>
+                    </p>
+
+                    <p class="text-body mb-2">@word.MeaningVn</p>
+                    <p class="text-sm mb-2">@word.MeaningKr</p>
+                </div>
+            }
+
+            @{
+                HttpClient httpClient = new HttpClient();
+                var message = await httpClient.GetAsync($"https://koreanverb.app/?search={Uri.EscapeDataString(query)}");
+                HtmlDocument doc = new();
+                doc.LoadHtml(message.Content.ReadAsStringAsync().Result);
+                var nodes = doc.DocumentNode.SelectNodes("//tr[contains(@class, 'conjugation-row')]/td[2]");
+                List<string> texts = (nodes != null && nodes.Any())
+                ? nodes.Select(node => node.InnerText.Substring(0, node.InnerText.Length - 3)).ToList()
+                : [];
+            }
+
+            @if (texts.Count() == 37)
+            {
+                <h3>Chia động từ</h3>
+
+                <table class="table table-bordered table-striped">
+                    <tr>
+                        <th class="text-end align-middle">Nguyên thể</th>
+                        <td>@doc.DocumentNode.SelectSingleNode("//article/dl[@class='dl-horizontal']/dd").InnerText</td>
+
+                        <th class="text-end align-middle">Danh từ hoá</th>
+                        <td>@texts[36]</td>
+                    </tr>
+
+                    <tr>
+                        <th class="text-end align-middle">Liên kết - Và</th>
+                        <td>@texts[35]</td>
+
+                        <th class="text-end align-middle">Liên kết - Hoặc</th>
+                        <td>@texts[34]</td>
+                    </tr>
+
+                    <tr>
+                        <th class="text-end align-middle">Gốc quá khứ</th>
+                        <td>@texts[4]</td>
+
+                        <th class="text-end align-middle">Gốc tương lai</th>
+                        <td>@texts[9]</td>
+                    </tr>
+                </table>
+
+                <table class="table table-bordered table-striped">
+                    <tbody>
+                        <tr>
+                            <th colspan="2" class="text-center align-middle">Thể</th>
+                            <th class="text-center align-middle">Suồng sã</th>
+                            <th class="text-center align-middle">Lịch sự</th>
+                            <th class="text-center align-middle">Văn viết</th>
+                            <th class="text-center align-middle">Trang trọng</th>
+                        </tr>
+                        <tr>
+                            <th rowspan="4" class="text-end align-middle">Trần thuật</th>
+                            <th class="text-end align-middle">Hiện tại</th>
+                            <td>@texts[0]</td>
+                            <td>@texts[1]</td>
+                            <td>@texts[2]</td>
+                            <td>@texts[3]</td>
+                        </tr>
+                        <tr>
+                            <th class="text-end align-middle">Quá khứ</th>
+                            <td>@texts[5]</td>
+                            <td>@texts[6]</td>
+                            <td>@texts[7]</td>
+                            <td>@texts[8]</td>
+                        </tr>
+                        <tr>
+                            <th class="text-end align-middle">Tương lai</th>
+                            <td>@texts[10]</td>
+                            <td>@texts[11]</td>
+                            <td>@texts[12]</td>
+                            <td>@texts[13]</td>
+                        </tr>
+                        <tr>
+                            <th class="text-end align-middle">Điều kiện tương lai</th>
+                            <td>@texts[14]</td>
+                            <td>@texts[15]</td>
+                            <td>@texts[16]</td>
+                            <td>@texts[17]</td>
+                        </tr>
+                        <tr>
+                            <th rowspan="2" class="text-end align-middle">Nghi vấn</th>
+                            <th class="text-end align-middle">Hiện tại</th>
+                            <td>@texts[18]</td>
+                            <td>@texts[19]</td>
+                            <td>@texts[20]</td>
+                            <td>@texts[21]</td>
+                        </tr>
+                        <tr>
+                            <th class="text-end align-middle">Quá khứ</th>
+                            <td>@texts[22]</td>
+                            <td>@texts[23]</td>
+                            <td>@texts[24]</td>
+                            <td>@texts[25]</td>
+                        </tr>
+                        <tr>
+                            <th colspan="2" class="text-end align-middle">Mệnh lệnh</th>
+                            <td>@texts[26]</td>
+                            <td>@texts[27]</td>
+                            <td>@texts[28]</td>
+                            <td>@texts[29]</td>
+                        </tr>
+                        <tr>
+                            <th colspan="2" class="text-end align-middle">Đề nghị</th>
+                            <td>@texts[30]</td>
+                            <td>@texts[31]</td>
+                            <td>@texts[32]</td>
+                            <td>@texts[33]</td>
+                        </tr>
+                    </tbody>
+                </table>
+            }
+
+            <!-- Ví dụ -->
+            @{
+                texts = texts.Select(text => text.Replace("?", "")).Distinct().ToList();
+
+                var examples = context.Examples
+                .Where(e =>
+                texts.Any(text => e.Korean.Contains(text)) ||
+                e.Korean.Contains(query) ||
+                e.Vietnamese.Contains(query)
+                ).ToList();
+
+                var firstExamples = examples.Take(5).ToList();
+                var remainingExamples = examples.Skip(5).ToList();
+            }
+
+            <div>
+                <h3 class="mb-3">Ví dụ</h3>
+                @foreach (var example in firstExamples)
+                {
+                    <div class="mb-3 px-3 py-2 border rounded bg-light position-relative">
+                        <!-- Options dropdown -->
+                        <!-- <div class="dropdown position-absolute top-0 end-0 m-2">
+                        <button class="btn btn-sm btn-light" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i>⋯</i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                        </ul>
+                        </div> -->
+                        <!-- Content -->
+                        <p class="mb-2">@example.Korean</p>
+                        <p class="m-0">@example.Vietnamese</p>
+                    </div>
+                }
+
+                @if (remainingExamples.Any())
+                {
+                    <div class="collapse" id="moreExamples">
+                        @foreach (var example in remainingExamples)
+                        {
+                            <div class="mb-3 px-3 py-2 border rounded bg-light position-relative">
+                                <!-- Options dropdown -->
+                                <!-- <div class="dropdown position-absolute top-0 end-0 m-2">
+                                <button class="btn btn-sm btn-light" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i>⋯</i>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end">
+                                </ul>
+                                </div> -->
+                                <!-- Content -->
+                                <p class="mb-2">@example.Korean</p>
+                                <p class="m-0">@example.Vietnamese</p>
+                            </div>
+                        }
+                    </div>
+
+                    <button class="btn btn-sm btn-secondary mb-3"
+                            type="button"
+                            data-bs-toggle="collapse"
+                            data-bs-target="#moreExamples"
+                            aria-expanded="false"
+                            aria-controls="moreExamples">
+                        Xem thêm / Ẩn bớt
+                    </button>
+                }
+            </div>
+            <!-- End of Ví dụ-->
+            <!-- Bình luận góp ý -->
+            <div>
+                <h3 class="mb-3">Bình luận góp ý</h3>
+
+                <!-- Comment Form -->
+                @if (id != Guid.Empty)
+                {
+                    <form method="post"
+                          asp-controller="@nameof(CommentOnKeywordController)[..^10]"
+                          asp-action="@nameof(CommentOnKeywordController.Handle)"
+                          class="d-flex justify-content-between gap-2 mb-3">
+                        <textarea name="Content" class="form-control" placeholder="Nhập bình luận..."></textarea>
+                        <button type="submit" name="type" value="add" class="btn btn-primary align-self-start">Gửi</button>
+                    </form>
+                }
+                else
+                {
+                    <p>
+                        <a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover"
+                           asp-controller="Authentication"
+                           asp-action="Login"
+                           asp-route-backurl="@(Context.Request.Path + Context.Request.QueryString)">Đăng nhập</a>
+                        để góp ý và phát triển cộng đồng!
+                    </p>
+                }
+
+
+                <!-- Comment List -->
+                <div>
+                    @{
+                        var comments = context.CommentOnKeywords
+                        .Where(comment => comment.Key == query)
+                        .OrderByDescending(comments => comments.CreatedAt)
+                        .Include(a => a.Account)
+                        .Include(a => a.Reactions);
+                    }
+                    @foreach (var comment in comments)
+                    {
+                        <div class="mb-3 p-3 border rounded bg-light position-relative">
+
+                            <!-- Options dropdown -->
+                            <div class="dropdown position-absolute top-0 end-0 m-2">
+                                <button class="btn btn-sm btn-light" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i>⋯</i>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end">
+                                    @if (comment.AccountId == id)
+                                    {
+                                        <li>
+                                            <button class="dropdown-item" data-bs-toggle="modal" data-bs-target="#editComment-@comment.Id">Chỉnh sửa</button>
+                                        </li>
+                                        <li>
+                                            <button class="dropdown-item text-danger" data-bs-toggle="modal" data-bs-target="#deleteComment-@comment.Id">Xóa</button>
+                                        </li>
+                                    }
+                                </ul>
+
+                                <div class="modal fade" id="editComment-@comment.Id" tabindex="-1" role="dialog" aria-hidden="true">
+                                    <div class="modal-dialog modal-dialog-centered">
+                                        <div class="modal-content">
+                                            <form method="post" asp-controller="@nameof(CommentOnKeywordController)[..^10]"
+                                                  asp-action="@nameof(CommentOnKeywordController.Handle)">
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title">Chỉnh sửa bình luận</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+                                                </div>
+
+                                                <div class="modal-body">
+                                                    <div class="mb-3">
+                                                        <label for="commentTextarea-@comment.Id" class="form-label">Nội dung</label>
+                                                        <textarea class="form-control" id="commentTextarea-@comment.Id" name="content" rows="4">@comment.Content</textarea>
+                                                    </div>
+                                                    <input type="hidden" name="commentId" value="@comment.Id" />
+                                                </div>
+
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                                                    <button type="submit" name="type" value="edit" class="btn btn-primary">Gửi</button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Delete Confirmation Modal -->
+                                <div class="modal fade" id="deleteComment-@comment.Id" tabindex="-1" role="dialog" aria-hidden="true">
+                                    <div class="modal-dialog modal-dialog-centered">
+                                        <div class="modal-content">
+                                            <form method="post" asp-controller="@nameof(CommentOnKeywordController)[..^10]"
+                                                  asp-action="@nameof(CommentOnKeywordController.Handle)">
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title">Xác nhận xóa</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+                                                </div>
+
+                                                <div class="modal-body">
+                                                    <p>Bạn có chắc muốn xóa bình luận này không?</p>
+                                                    <input type="hidden" name="commentId" value="@comment.Id" />
+                                                    <input type="hidden" name="type" value="delete" />
+                                                </div>
+
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                                                    <button type="submit" class="btn btn-danger">Xóa</button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+
+
+                            </div>
+
+                            <!-- Comment Content -->
+                            <p class="mb-2">@comment.Content</p>
+
+                            <!-- Reactions + Author/Time -->
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="me-2">
+
+                                    <button class="btn btn-sm btn-outline-success" onclick="handleReact(this.parentElement, `@comment.Id`, true)">
+                                        @if (comment.Reactions.Any(r => r.IsLike && r.AccountId == id))
+                                        {
+                                            <i class="bi bi-hand-thumbs-up-fill"></i>
+                                        }
+                                        else
+                                        {
+                                            <i class="bi bi-hand-thumbs-up"></i>
+                                        }
+                                        <span class="ms-1">@comment.Reactions.Where(r => r.IsLike).Count()</span>
+                                    </button>
+
+                                    <button class="btn btn-sm btn-outline-danger" onclick="handleReact(this.parentElement, `@comment.Id`, false)">
+                                        @if (comment.Reactions.Any(r => !r.IsLike && r.AccountId == id))
+                                        {
+                                            <i class="bi bi-hand-thumbs-down-fill"></i>
+                                        }
+                                        else
+                                        {
+                                            <i class="bi bi-hand-thumbs-down"></i>
+                                        }
+                                        <span class="ms-1">@comment.Reactions.Where(r => !r.IsLike).Count()</span>
+                                    </button>
+                                </div>
+                                <div class="text-end small text-muted">
+                                    <strong>@comment.Account.Username</strong>
+                                    <span>@comment.CreatedAt.ToString("g")</span>
+                                </div>
+                            </div>
+
+                        </div>
+
+                    }
+                </div>
+            </div>
+            <!-- End of Bình luận góp ý -->
+        </div>
+
+        <script>
+            function handleReact(container, commentId, isLike) {
+
+                var likeButton = container.children[0];
+                var disLikeButton = container.children[1];
+
+                var likeIcon = likeButton.querySelector('i');
+                var disLikeIcon = disLikeButton.querySelector('i');
+
+                var isLiked = () => likeIcon.classList.contains('bi-hand-thumbs-up-fill');
+                var isDisliked = () => disLikeIcon.classList.contains('bi-hand-thumbs-down-fill');
+
+                var currentIsLike = null;
+                if(isLiked()) currentIsLike = true;
+                if(isDisliked()) currentIsLike = false;
+
+
+                function updateCount(button, isIncrease) {
+                    var count = button.querySelector('span');
+                    isIncrease
+                        ? (count.innerText = parseInt(count.innerText) + 1)
+                        : (count.innerText = parseInt(count.innerText) - 1);
+                }
+
+                fetch(`/api/CommentOnKeywordReaction?commentId=${commentId}&isLike=${isLike}`, {
+                    method: 'POST',
+                })
+                .then(res => {
+                    if(res.status == 401) throw new Error('Bạn chưa đăng nhập.')
+                    if(res.status == 404) throw new Error('Không tìm thấy bình luận.')
+                    if(500 <= res.status && res.status < 600) throw new Error('Lỗi hệ thống.')
+                })
+                .then(res => {
+                    if(currentIsLike == null) {
+                        if(isLike) {
+                            likeIcon.classList.replace('bi-hand-thumbs-up', 'bi-hand-thumbs-up-fill')
+                            updateCount(likeButton, true)
+                        }
+                        else {
+                            disLikeIcon.classList.replace('bi-hand-thumbs-down', 'bi-hand-thumbs-down-fill')
+                            updateCount(disLikeButton, true)
+                        }
+                    }
+                    else {
+                        if(currentIsLike == isLike) {
+                            if(currentIsLike) {
+                                likeIcon.classList.replace('bi-hand-thumbs-up-fill', 'bi-hand-thumbs-up')
+                                updateCount(likeButton, false)
+                            }
+                            else {
+                                disLikeIcon.classList.replace('bi-hand-thumbs-down-fill', 'bi-hand-thumbs-down')
+                                updateCount(disLikeButton, false)
+                            }
+                        }
+                        else {
+                            if(isLike == true) {
+                                likeIcon.classList.replace('bi-hand-thumbs-up', 'bi-hand-thumbs-up-fill')
+                                disLikeIcon.classList.replace('bi-hand-thumbs-down-fill', 'bi-hand-thumbs-down')
+                                updateCount(likeButton, true)
+                                updateCount(disLikeButton, false)
+                            }
+                            else {
+                                likeIcon.classList.replace('bi-hand-thumbs-up-fill', 'bi-hand-thumbs-up')
+                                disLikeIcon.classList.replace('bi-hand-thumbs-down', 'bi-hand-thumbs-down-fill')
+                                updateCount(likeButton, false)
+                                updateCount(disLikeButton, true)
+                            }
+                        }
+                    }
+                })
+                .catch(err => {
+                    const wrapper = document.createElement('div');
+                    wrapper.className = 'position-fixed bottom-0 end-0 p-3';
+                    wrapper.style.zIndex = '1050';
+
+                    wrapper.innerHTML = `
+                        <div class="alert alert-danger alert-dismissible fade show shadow-sm small mb-0" role="alert">
+                            ${err.message}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    `;
+
+                    document.body.appendChild(wrapper);
+                });
+
+            }
+        </script>
+
+        <div class="col-lg-3 order-lg-1">
+
+            <!-- từ vựng liên quan-->
+            <h3 class="mb-3">Từ vựng liên quan</h3>
+
+            @{
+                var firstWords = similars.Take(15).ToList();
+                var remainingWords = similars.Skip(15).ToList();
+            }
+
+            @foreach (var word in firstWords)
+            {
+                <div class="mb-2 p-2 border rounded bg-light position-relative">
+                    <!-- Options dropdown -->
+                    <!-- <div class="dropdown position-absolute top-0 end-0 m-2">
+                        <button class="btn btn-sm btn-light" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i>⋯</i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                        </ul>
+                    </div> -->
+                    <!-- Content -->
+                    <a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover"
+                       asp-controller="@nameof(SearchController)[..^10]"
+                       asp-action="@nameof(SearchController.Index)"
+                       asp-route-query="@word.WordKr">
+                        @word.WordKr
+                    </a>
+
+
+                    @if (!string.IsNullOrWhiteSpace(word.Pronunciation))
+                    {
+                        <span class="text-muted small">(@word.Pronunciation)</span>
+                    }
+
+                    <span class="fw-semibold">@word.WordVn</span>
+                </div>
+            }
+
+            @if (remainingWords.Any())
+            {
+                <div class="collapse" id="moreWords">
+                    @foreach (var word in remainingWords)
+                    {
+                        <div class="mb-2 p-2 border rounded bg-light position-relative">
+                            <!-- Options dropdown -->
+                            <!-- <div class="dropdown position-absolute top-0 end-0 m-2">
+                                <button class="btn btn-sm btn-light" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i>⋯</i>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end">
+                                </ul>
+                            </div> -->
+                            <!-- Content -->
+                            <a asp-controller="@nameof(SearchController)[..^10]"
+                               asp-action="@nameof(SearchController.Index)"
+                               asp-route-query="@word.WordKr">@word.WordKr</a>
+
+                            @if (!string.IsNullOrWhiteSpace(word.Pronunciation))
+                            {
+                                <span class="text-muted small">(@word.Pronunciation)</span>
+                            }
+
+                            <span class="fw-semibold">@word.WordVn</span>
+                        </div>
+                    }
+                </div>
+
+                <button class="btn btn-sm btn-secondary mb-3"
+                        type="button"
+                        data-bs-toggle="collapse"
+                        data-bs-target="#moreWords"
+                        aria-expanded="false"
+                        aria-controls="moreWords">
+                    Xem thêm / Ẩn bớt
+                </button>
+            }
+            <!-- end of từ vựng liên quan-->
+
+        </div>
+
+    </div>
+</div>
+
+
+
+
+
+
+

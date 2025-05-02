@@ -1,0 +1,100 @@
+﻿@using Swlh.Domain.Enums
+@using Swlh.WebApp.Controllers
+@model Swlh.WebApp.Domain.Entities.Account
+
+@{
+    ViewData["Title"] = "Tài khoản của tôi";
+}
+
+<div>
+    <dl class="row">
+        <dt class="col-sm-2">
+            Username:
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.Username)
+        </dd>
+        <dt class="col-sm-2">
+            Email:
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.Email)
+        </dd>
+        <dt class="col-sm-2">
+            Quyền hạn:
+        </dt>
+        <dd class="col-sm-10">
+            @switch (Model.Role)
+            {
+                case Role.Admin:
+                    <span class="badge bg-danger">Quản trị viên</span>
+                    break;
+                case Role.User:
+                    <span class="badge bg-primary">Người dùng</span>
+                    break;
+                default:
+                    <span class="badge bg-secondary">Khách</span>
+                    break;
+            }
+        </dd>
+        @if (@Model.IsDisabled)
+        {
+            <dt class="col-sm-2">
+                Tình trạng:
+            </dt>
+            <dd class="col-sm-10">
+                <span class="badge bg-danger">Đã bị khóa</span>
+            </dd>
+        }
+        <dt class="col-sm-2">
+            Tham gia ngày:
+        </dt>
+        <dd class="col-sm-10">
+            @Model.CreatedAt.ToString("dddd, dd MMMM yyyy", new System.Globalization.CultureInfo("vi-VN"))
+
+        </dd>
+    </dl>
+</div>
+<div>
+    @{
+        var backUrl = Context.Request.Path + Context.Request.QueryString;
+    }
+    <div class="mb-3">
+        <a class="btn btn-sm btn-warning"
+           asp-controller="@nameof(AuthenticationController)[..^10]"
+           asp-action="@nameof(AuthenticationController.UpdateAccount)"
+           asp-route-backurl="@backUrl">
+            Sửa thông tin tài khoản
+        </a>
+        <a class="btn btn-sm btn-secondary"
+           asp-controller="@nameof(AuthenticationController)[..^10]"
+           asp-action="@nameof(AuthenticationController.ChangePassword)"
+           asp-route-backurl="@backUrl">
+            Đổi mật khẩu
+        </a>
+        <a class="btn btn-sm btn-danger"
+           asp-controller="@nameof(AuthenticationController)[..^10]"
+           asp-action="@nameof(AuthenticationController.Logout)"
+           asp-route-backurl="@backUrl">
+            Đăng xuất
+        </a>
+    </div>
+
+    <h3>Góp ý từ vựng của tôi</h3>
+    @foreach (var comment in Model.CommentOnWords)
+    {
+        <div class="card mb-2">
+            <div class="card-body">
+                <p class="card-text">
+                    <a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover"
+                        asp-controller="@nameof(SearchController)[..^10]"
+                       asp-action="@nameof(SearchController.Index)"
+                       asp-route-query="@comment.Keyword.Key">@comment.Keyword.Key</a>
+                    <small class="text-muted">(@comment.CreatedAt): </small>
+                    <span class="card-text">@comment.Content</span>
+                </p>
+
+            </div>
+        </div>
+    }
+</div>

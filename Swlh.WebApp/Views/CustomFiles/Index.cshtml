@@ -1,0 +1,73 @@
+﻿@using Swlh.WebApp.Controllers
+@model IEnumerable<Swlh.WebApp.Domain.Entities.CustomFile>
+
+@{
+    ViewData["Title"] = "File";
+}
+
+<p>
+    <form method="post" asp-action="Create" enctype="multipart/form-data">
+        <div class="form-group d-flex align-items-center gap-1">
+            <input id="asdf" name="file" class="form-control flex-grow-1" type="file" required="required">
+            <button type="submit" class="btn btn-success text-nowrap">Upload file</button>
+        </div>
+    </form>
+
+</p>
+<table class="table">
+    <thead>
+        <tr>
+            <th>Tên file</th>
+            <th>Loại</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td class="align-middle">
+                    <a asp-action="Details" target="_blank" asp-route-id="@item.Id"
+                       class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover">@item.FileName</a>
+                </td>
+                <td class="align-middle">
+                    @item.ContentType
+                </td>
+                <td class="align-middle">
+                    <div class="d-flex gap-1">
+                        <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteFile-@item.Id">Xóa</button>
+                        <button class="btn btn-primary" onclick="navigator.clipboard.writeText(window.location.origin + '/CustomFiles/Details/@item.Id')">Copy full path</button>
+                        <button class="btn btn-secondary" onclick="navigator.clipboard.writeText('/CustomFiles/Details/@item.Id')">Copy relative path</button>
+                    </div>
+
+                    <!-- Delete Confirmation Modal -->
+                    <div class="modal fade" id="deleteFile-@item.Id" tabindex="-1" role="dialog" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered">
+                            <div class="modal-content">
+                                <form method="post" asp-controller="@nameof(CustomFilesController)[..^10]"
+                                      asp-action="@nameof(CustomFilesController.Delete)">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title">Xác nhận xóa</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+                                    </div>
+
+                                    <div class="modal-body">
+                                        <p>Bạn có chắc muốn xóa file @item.FileName không?</p>
+                                        <input type="hidden" name="Id" value="@item.Id" />
+                                        <input type="hidden" name="type" value="delete" />
+                                    </div>
+
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                                        <button type="submit" value="Delete" class="btn btn-danger">Xóa</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

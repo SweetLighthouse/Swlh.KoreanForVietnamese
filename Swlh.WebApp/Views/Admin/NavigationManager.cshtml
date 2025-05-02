@@ -1,0 +1,50 @@
+﻿@* <script src="https://cdn.jsdelivr.net/npm/jsoneditor@latest"></script> *@
+@* <link href="https://cdn.jsdelivr.net/npm/jsoneditor@latest/dist/jsoneditor.min.css" rel="stylesheet" type="text/css"> *@
+
+<script src="~/lib/json-editor/jsoneditor@latest.js"></script>
+<link href="~/lib/json-editor/jsoneditor.min.css" rel="stylesheet" type="text/css"/>
+
+<div id="editor" style="height: 80vh;" class="mb-2"></div>
+<div>
+    <button class="btn btn-primary" onclick="save()">Lưu</button>
+    <a class="btn btn-primary" href="/">Huỷ</>
+</div>
+
+<script>
+    const container = document.getElementById("editor");
+    let editor;
+
+    // Load schema and json
+    Promise.all([
+        fetch('/PrivateFiles/nav_schema.json').then(r => r.json()),
+        fetch(`/PrivateFiles/nav.json?nocache=${Date.now()}`).then(r => r.json())
+    ]).then(([schema, json]) => {
+        editor = new JSONEditor(container, {
+            mode: 'tree',
+            schema: schema,
+            mainMenuBar: true
+        });
+        editor.set(json);
+    });
+
+    function save() {
+        const updated = editor.get();
+        console.log(updated);
+        fetch('/nav/save', {
+            method: 'POST',
+            body: JSON.stringify(updated),
+            headers: { 'Content-Type': 'application/json' }
+        })
+        .then(response => {
+            if (!response.ok) throw new Error("Failed to save");
+        })
+        .then(() => {
+            location.reload(); // reload page on success
+        })
+        .catch(err => {
+            console.error('Save error:', err);
+            alert('Failed to save changes.');
+        });
+    }
+
+</script>

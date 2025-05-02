@@ -1,0 +1,232 @@
+﻿@using Swlh.Domain.Enums
+@using Swlh.WebApp.Application.Dtos.BaseDtos
+@using Swlh.WebApp.Application.Dtos.PostDtos
+@using Swlh.WebApp.Context
+@using Swlh.WebApp.Controllers
+@using Swlh.WebApp.Domain.Entities
+@inject MainDbContext context
+@model PageResultDto<Post>
+
+@{
+    ViewData["Title"] = "Index";
+}
+
+<h1>Danh sách bài viết</h1>
+
+@if (Enum.TryParse(Context.Session.GetString("Role"), out Role role) && role == Role.Admin)
+{
+    <a asp-controller="@nameof(PostController)[..^10]" asp-action="@nameof(PostController.Create)"
+    class="btn btn-success mb-3">Thêm mới</a>
+}
+
+<form class="mb-2" method="get">
+
+    <div class="form-floating mb-2">
+        <input type="text" class="form-control" placeholder="..." id="PartOfTitle"
+        name="PartOfTitle" value="@TempData[nameof(PostSearchDto.PartOfTitle)]" />
+        <label for="PartOfTitle">Tiêu đề</label>
+    </div>
+
+    <div class="form-floating mb-2">
+        <input type="text" class="form-control" placeholder="..." id="tagInput">
+        <label for="tagInput">Nhập các tag rồi Enter...</label>
+        <div id="tagHolder" class="d-flex flex-wrap gap-2 mt-2"></div>
+    </div>
+
+    <div class="form-group mb-2 d-flex justify-content-between">
+        <div>
+            <input list="taglist" type="submit" value="Tìm kiếm" class="btn btn-primary" />
+            <datalist id="taglist">
+                @foreach (var tag in context.Tags.ToList())
+                {
+                    <option value="@tag.Value"></option>
+                }
+            </datalist>
+            <span>Tổng số kết quả: @Model.TotalItem</span>
+        </div>
+        <div class="custom-pagination d-flex justify-content-center"></div>
+    </div>
+</form>
+
+<script>
+    const currentPage = @Model.Page;
+    const totalPages = @Model.TotalPage;
+
+    const url = new URL(window.location.href);
+    const params = url.searchParams;
+
+    function createPagination(container, current, total) {
+        container.innerHTML = '';
+
+        const ul = document.createElement('ul');
+        ul.className = 'pagination';
+
+        function addPage(label, page, disabled = false, active = false) {
+            const li = document.createElement('li');
+            li.className = `page-item${disabled ? ' disabled' : ''}${active ? ' active' : ''}`;
+
+            const a = document.createElement('a');
+            a.className = 'page-link';
+            a.textContent = label;
+
+            if (!disabled && !active) {
+                a.href = generateUrl(page);
+            }
+
+            li.appendChild(a);
+            ul.appendChild(li);
+        }
+
+        function generateUrl(page) {
+            const newParams = new URLSearchParams(params);
+            newParams.set('page', page);
+            return `${window.location.pathname}?${newParams.toString()}`;
+        }
+
+        // Previous button
+        addPage('«', current - 1, current === 1);
+
+        // Numbered pages (e.g., 1 ... 4 5 6 ... 10)
+        const range = 4; // how many pages around current
+        const start = Math.max(1, current - range);
+        const end = Math.min(total, current + range);
+
+        if (start > 1) addPage(1, 1);
+        if (start > 2) addPage('...', null, true);
+
+        for (let i = start; i <= end; i++) {
+            addPage(i, i, false, i === current);
+        }
+
+        if (end < total - 1) addPage('...', null, true);
+        if (end < total) addPage(total, total);
+
+        // Next button
+        addPage('»', current + 1, current === total);
+
+        container.appendChild(ul);
+    }
+    document.addEventListener('DOMContentLoaded', _ => {
+        document.querySelectorAll('.custom-pagination').forEach(element => {
+            createPagination(element, currentPage, totalPages);
+        });
+    });
+    
+</script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const input = document.getElementById('tagInput');
+        const tagsDiv = document.getElementById('tagHolder');
+
+        const initialTags = @Html.Raw(Json.Serialize(TempData[nameof(PostSearchDto.TagNames)] ?? new List<string>()));
+
+        function createTag(value) {
+            const tag = document.createElement('span');
+            tag.className = 'badge bg-primary d-flex align-items-center position-relative';
+            tag.textContent = value;
+
+            const closeBtn = document.createElement('button');
+            closeBtn.type = 'button';
+            closeBtn.className = 'btn-close btn-close-white btn-sm ms-2';
+            closeBtn.setAttribute('aria-label', 'Close');
+            closeBtn.addEventListener('click', () => tag.remove());
+
+            const hiddenInput = document.createElement('input');
+            hiddenInput.type = 'hidden';
+            hiddenInput.name = 'TagNames';
+            hiddenInput.value = value;
+
+            tag.appendChild(closeBtn);
+            tag.appendChild(hiddenInput);
+            tagsDiv.appendChild(tag);
+        }
+
+        // Render initial tags from server
+        initialTags.forEach(createTag);
+
+        input.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                const value = input.value.trim();
+                if (!value) return;
+                createTag(value);
+                input.value = '';
+            }
+        });
+    });
+</script>
+
+<div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 gx-1 mb-2">
+    @foreach (var item in Model.Items)
+    {
+        <div class="col">
+            <div class="border rounded shadow-sm p-2 h-100 d-flex flex-column">
+                <a asp-controller="@nameof(PostController)[..^10]"
+                   asp-action="@nameof(PostController.Details)"
+                   asp-route-id="@item.Id"
+                   class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover">
+                    @{
+                        string imageDataURL = (item.Thumbnail != null && item.Thumbnail.Length > 0)
+                        ? $"data:image/png;base64,{Convert.ToBase64String(item.Thumbnail)}"
+                        : Url.Content("~/img/DefaultThumbnail.jpg");
+                    }
+                    <img src="@imageDataURL" alt="Image"
+                         class="img-fluid mb-2" style="height: 200px; object-fit: cover; width: 100%;" />
+
+                    <h4>@item.Title</h4>
+                </a>
+                <div class="mt-auto mb-3">
+                    @foreach (var tag in item.Tags)
+                    {
+                        <span class="badge bg-secondary">@tag.Value</span>
+                    }
+                </div>
+                <div>
+                    <i class="bi bi-hand-thumbs-up"></i> @item.
+                </div>
+                @if (Enum.TryParse(Context.Session.GetString("Role"), out role) && role == Role.Admin)
+                {
+                    <div>
+                        <a asp-controller="@nameof(PostController)[..^10]" asp-action="@nameof(PostController.Edit)"
+                           asp-route-id="@item.Id" class="btn btn-warning">Sửa</a>
+
+                        <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deletePost-@item.Id">Xóa</button>
+                    </div>
+
+
+                    <!-- Delete Confirmation Modal -->
+                    <div class="modal fade" id="deletePost-@item.Id" tabindex="-1" role="dialog" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered">
+                            <div class="modal-content">
+                                <form method="post" asp-controller="@nameof(PostController)[..^10]"
+                                      asp-action="@nameof(PostController.DeleteConfirmed)">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title">Xác nhận xóa</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+                                    </div>
+
+                                    <div class="modal-body">
+                                        <p>Bạn có chắc muốn xóa bài viết này không?</p>
+                                        <input type="hidden" name="Id" value="@item.Id" />
+                                        <input type="hidden" name="type" value="delete" />
+                                    </div>
+
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                                        <button type="submit" value="Delete" class="btn btn-danger">Xóa</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+</div>
+
+<div class="d-flex justify-content-between align-items-center">
+    <span>Tổng số kết quả: @Model.TotalItem</span>
+    <div class="custom-pagination d-flex justify-content-center"></div>
+</div>

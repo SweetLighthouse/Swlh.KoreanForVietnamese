@@ -1,0 +1,27 @@
+﻿.play-button {
+    width: 50px;
+    height: 50px;
+    border: none;
+    background: #4CAF50; /* green */
+    border-radius: 50%;
+    cursor: pointer;
+    position: relative;
+    outline: none;
+}
+
+/* Triangle play icon */
+.play-button::before {
+    content: '';
+    position: absolute;
+    left: 18px;
+    top: 14px;
+    width: 0;
+    height: 0;
+    border-top: 11px solid transparent;
+    border-bottom: 11px solid transparent;
+    border-left: 18px solid white;
+}
+
+.tox-promotion {
+    display: none !important;
+}

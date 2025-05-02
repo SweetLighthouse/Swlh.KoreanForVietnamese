@@ -1,0 +1,38 @@
+﻿@inject IWebHostEnvironment env
+@{
+    ViewData["Title"] = "Chỉnh sửa trang chủ";
+
+    var fileName = "_Homepage.json";
+    var filePath = System.IO.Path.Combine(env.ContentRootPath, "wwwroot", "PrivateFiles", fileName);
+    var fileContent = System.IO.File.Exists(filePath) ? System.IO.File.ReadAllText(filePath) : "";
+}
+
+<div class="form-group mb-2">
+    <h3 class="text-dark">Chỉnh sửa trang chủ</h3>
+    <textarea id="editor" class="form-control">@Html.Raw(fileContent)</textarea>
+</div>
+
+<style>
+    .tox-promotion {
+        display: none !important;
+    }
+</style>
+
+<script src="~/js/tinymce_post_body.js" defer></script>
+
+<button type="submit" class="btn btn-primary" onclick="handleSubmit()">Sửa</button>
+<script>
+    function handleSubmit() {
+        fetch('/homepage/save', {
+            method: 'POST',
+            body: tinymce.get('editor').getContent()
+        })
+        .then(_ => {
+            window.location.href = '/';
+        })
+        .catch(error => {
+            console.error("Error during save:", error);
+            alert("Đã xảy ra lỗi khi gửi yêu cầu.");
+        });
+    }
+</script>

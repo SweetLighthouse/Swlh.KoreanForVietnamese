@@ -1,0 +1,103 @@
+﻿@using Swlh.WebApp.Controllers
+@model Swlh.WebApp.Application.Dtos.PostDtos.PostRequestDto
+
+@{
+    ViewData["Title"] = "Sửa bài viết";
+}
+
+<style>
+    .tox-promotion {
+        display: none !important;
+    }
+</style>
+
+<div class="row">
+    <div class="col-12">
+        <form asp-action="@nameof(PostController.Edit)" enctype="multipart/form-data">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <div class="form-group mb-3">
+                <label asp-for="Title" class="control-label">Tiêu đề</label>
+                <input asp-for="Title" class="form-control w-100" />
+                <span asp-validation-for="Title" class="text-danger"></span>
+            </div>
+
+            <div class="form-group mb-3">
+                <label asp-for="Description" class="control-label">Mô tả</label>
+                <textarea asp-for="Description" class="form-control w-100"></textarea>
+                <span asp-validation-for="Description" class="text-danger"></span>
+            </div>
+
+            <div class="form-group mb-3">
+                <label asp-for="Thumbnail" class="form-label">Ảnh bìa</label>
+                <input asp-for="Thumbnail" class="form-control" type="file" accept="image/*">
+            </div>
+
+            <div class="form-group mb-3">
+                <label asp-for="Body" class="control-label">Nội dung</label>
+                <textarea asp-for="Body" id="editor" class="form-control"></textarea>
+                <span asp-validation-for="Body" class="text-danger"></span>
+            </div>
+
+            <script src="~/js/tinymce_post_body.js" defer></script>
+
+            @* <div class="form-group form-check"> *@
+            @*     <label class="form-check-label"> *@
+            @*         <input class="form-check-input" asp-for="IsDisabled" /> Vô hiệu hoá *@
+            @*     </label> *@
+            @* </div> *@
+
+            <div class="form-floating mb-3">
+                <input type="text" class="form-control" placeholder="..." id="tagInput">
+                <label for="tagInput">Nhập các tag rồi Enter...</label>
+                <div id="tagHolder" class="d-flex flex-wrap gap-2 mt-2"></div>
+            </div>
+
+            <div class="form-group mb-3">
+                <input type="submit" value="Sửa" class="btn btn-primary" />
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const input = document.getElementById('tagInput');
+        const tagsDiv = document.getElementById('tagHolder');
+
+        const initialTags = @Html.Raw(Json.Serialize(Model?.TagNames ?? new List<string>()));
+
+        function createTag(value) {
+            const tag = document.createElement('span');
+            tag.className = 'badge bg-primary d-flex align-items-center position-relative';
+            tag.textContent = value;
+
+            const closeBtn = document.createElement('button');
+            closeBtn.type = 'button';
+            closeBtn.className = 'btn-close btn-close-white btn-sm ms-2';
+            closeBtn.setAttribute('aria-label', 'Close');
+            closeBtn.addEventListener('click', () => tag.remove());
+
+            const hiddenInput = document.createElement('input');
+            hiddenInput.type = 'hidden';
+            hiddenInput.name = 'TagNames';
+            hiddenInput.value = value;
+
+            tag.appendChild(closeBtn);
+            tag.appendChild(hiddenInput);
+            tagsDiv.appendChild(tag);
+        }
+
+        // Render initial tags from server
+        initialTags.forEach(createTag);
+
+        input.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                const value = input.value.trim();
+                if (!value) return;
+                createTag(value);
+                input.value = '';
+            }
+        });
+    });
+</script>

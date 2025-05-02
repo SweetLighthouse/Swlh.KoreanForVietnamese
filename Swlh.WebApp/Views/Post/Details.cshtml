@@ -1,0 +1,305 @@
+﻿@using Swlh.Domain.Enums
+@using Swlh.WebApp.Controllers
+@model Swlh.WebApp.Domain.Entities.Post
+
+@{
+    ViewData["Title"] = Model.Title;
+}
+
+<div>
+    <h2>@Model.Title</h2>
+    <span class="small">@Model.CreatedAt.ToString("dddd, dd MMMM yyyy HH:mm:ss", new System.Globalization.CultureInfo("vi-VN"))</span>
+    <span>Số lượt xem: @Model.AccessedCount</span>
+    <div class="mt-auto mb-2">
+        @foreach (var tag in Model.Tags)
+        {
+            <span class="badge bg-secondary">@tag.Value</span>
+        }
+    </div>
+
+    @if (Enum.TryParse(Context.Session.GetString("Role"), out Role role) && role == Role.Admin)
+    {
+        <div class="mb-2">
+            <a asp-controller="@nameof(PostController)[..^10]" asp-action="@nameof(PostController.Edit)"
+               asp-route-id="@Model.Id" class="btn btn-warning">Sửa</a>
+
+            <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deletePost-@Model.Id">Xóa</button>
+        </div>
+
+
+        <!-- Delete Confirmation Modal -->
+        <div class="modal fade" id="deletePost-@Model.Id" tabindex="-1" role="dialog" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <form method="post" asp-controller="@nameof(PostController)[..^10]"
+                          asp-action="@nameof(PostController.DeleteConfirmed)">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Xác nhận xóa</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+                        </div>
+
+                        <div class="modal-body">
+                            <p>Bạn có chắc muốn xóa bài viết này không?</p>
+                            <input type="hidden" name="Id" value="@Model.Id" />
+                            <input type="hidden" name="type" value="delete" />
+                        </div>
+
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                            <button type="submit" value="Delete" class="btn btn-danger">Xóa</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    }
+    
+    <link rel="stylesheet" href="/css/tinymce_custom.css">
+    <link rel="stylesheet" href="/lib/tinymce/skins/content/default/content.min.css" />
+    <div class="container-fluid mb-5">
+        @Html.Raw(Model.Body)
+    </div>
+</div>
+
+@{
+    string query = Context.Request.Query.TryGetValue("query", out var val) ? val.ToString() : string.Empty;
+    Guid.TryParse(Context.Session.GetString("Id"), out var id);
+}
+
+<!-- Bình luận góp ý -->
+<div class="mb-5">
+    <h3 class="mb-3">Bình luận góp ý</h3>
+
+    <!-- Comment Form -->
+    @if (id != Guid.Empty)
+    {
+        <form method="post"
+              asp-controller="@nameof(CommentOnPostController)[..^10]"
+              asp-action="@nameof(CommentOnPostController.Handle)"
+              class="d-flex justify-content-between gap-2 mb-3">
+            <textarea name="Content" class="form-control" placeholder="Nhập bình luận..."></textarea>
+            <button type="submit" name="type" value="add" class="btn btn-primary align-self-start">Gửi</button>
+        </form>
+    }
+    else
+    {
+        <p>
+            <a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover"
+               asp-controller="Authentication"
+               asp-action="Login"
+               asp-route-backurl="@(Context.Request.Path + Context.Request.QueryString)">Đăng nhập</a>
+            để góp ý và phát triển cộng đồng!
+        </p>
+    }
+
+
+    <!-- Comment List -->
+    <div>
+        @foreach (var comment in Model.Comments)
+        {
+            <div class="mb-3 p-3 border rounded bg-light position-relative">
+
+                <!-- Options dropdown -->
+                <div class="dropdown position-absolute top-0 end-0 m-2">
+                    <button class="btn btn-sm btn-light" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i>⋯</i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        @if (comment.AccountId == id)
+                        {
+                            <li>
+                                <button class="dropdown-item" data-bs-toggle="modal" data-bs-target="#editComment-@comment.Id">Chỉnh sửa</button>
+                            </li>
+                            <li>
+                                <button class="dropdown-item text-danger" data-bs-toggle="modal" data-bs-target="#deleteComment-@comment.Id">Xóa</button>
+                            </li>
+                        }
+                    </ul>
+
+                    <div class="modal fade" id="editComment-@comment.Id" tabindex="-1" role="dialog" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered">
+                            <div class="modal-content">
+                                <form method="post" asp-controller="@nameof(CommentOnPostController)[..^10]"
+                                      asp-action="@nameof(CommentOnPostController.Handle)">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title">Chỉnh sửa bình luận</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+                                    </div>
+
+                                    <div class="modal-body">
+                                        <div class="mb-3">
+                                            <label for="commentTextarea-@comment.Id" class="form-label">Nội dung</label>
+                                            <textarea class="form-control" id="commentTextarea-@comment.Id" name="content" rows="4">@comment.Content</textarea>
+                                        </div>
+                                        <input type="hidden" name="commentId" value="@comment.Id" />
+                                    </div>
+
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                                        <button type="submit" name="type" value="edit" class="btn btn-primary">Gửi</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Delete Confirmation Modal -->
+                    <div class="modal fade" id="deleteComment-@comment.Id" tabindex="-1" role="dialog" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered">
+                            <div class="modal-content">
+                                <form method="post" asp-controller="@nameof(CommentOnPostController)[..^10]"
+                                      asp-action="@nameof(CommentOnPostController.Handle)">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title">Xác nhận xóa</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+                                    </div>
+
+                                    <div class="modal-body">
+                                        <p>Bạn có chắc muốn xóa bình luận này không?</p>
+                                        <input type="hidden" name="commentId" value="@comment.Id" />
+                                        <input type="hidden" name="type" value="delete" />
+                                    </div>
+
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                                        <button type="submit" class="btn btn-danger">Xóa</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+
+                </div>
+
+                <!-- Comment Content -->
+                <p class="mb-2">@comment.Content</p>
+
+                <!-- Reactions + Author/Time -->
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="me-2">
+
+                        <button class="btn btn-sm btn-outline-success" onclick="handleReact(this.parentElement, `@comment.Id`, true)">
+                            @if (comment.Reactions.Any(r => r.IsLike && r.AccountId == id))
+                            {
+                                <i class="bi bi-hand-thumbs-up-fill"></i>
+                            }
+                            else
+                            {
+                                <i class="bi bi-hand-thumbs-up"></i>
+                            }
+                            <span class="ms-1">@comment.Reactions.Where(r => r.IsLike).Count()</span>
+                        </button>
+
+                        <button class="btn btn-sm btn-outline-danger" onclick="handleReact(this.parentElement, `@comment.Id`, false)">
+                            @if (comment.Reactions.Any(r => !r.IsLike && r.AccountId == id))
+                            {
+                                <i class="bi bi-hand-thumbs-down-fill"></i>
+                            }
+                            else
+                            {
+                                <i class="bi bi-hand-thumbs-down"></i>
+                            }
+                            <span class="ms-1">@comment.Reactions.Where(r => !r.IsLike).Count()</span>
+                        </button>
+                    </div>
+                    <div class="text-end small text-muted">
+                        <strong>@comment.Account.Username</strong>
+                        <span>@comment.CreatedAt.ToString("g")</span>
+                    </div>
+                </div>
+
+            </div>
+
+        }
+    </div>
+</div>
+<!-- End of Bình luận góp ý -->
+
+<script>
+    function handleReact(container, commentId, isLike) {
+
+        var likeButton = container.children[0];
+        var disLikeButton = container.children[1];
+
+        var likeIcon = likeButton.querySelector('i');
+        var disLikeIcon = disLikeButton.querySelector('i');
+
+        var isLiked = () => likeIcon.classList.contains('bi-hand-thumbs-up-fill');
+        var isDisliked = () => disLikeIcon.classList.contains('bi-hand-thumbs-down-fill');
+
+        var currentIsLike = null;
+        if(isLiked()) currentIsLike = true;
+        if(isDisliked()) currentIsLike = false;
+
+
+        function updateCount(button, isIncrease) {
+            var count = button.querySelector('span');
+            isIncrease
+                ? (count.innerText = parseInt(count.innerText) + 1)
+                : (count.innerText = parseInt(count.innerText) - 1);
+        }
+
+        fetch(`/api/CommentOnPostReaction?commentId=${commentId}&isLike=${isLike}`, {
+            method: 'POST',
+        })
+        .then(res => {
+            if(res.status == 401) throw new Error('Bạn chưa đăng nhập.')
+            if(res.status == 404) throw new Error('Không tìm thấy bình luận.')
+            if(500 <= res.status && res.status < 600) throw new Error('Lỗi hệ thống.')
+        })
+        .then(res => {
+            if(currentIsLike == null) {
+                if(isLike) {
+                    likeIcon.classList.replace('bi-hand-thumbs-up', 'bi-hand-thumbs-up-fill')
+                    updateCount(likeButton, true)
+                }
+                else {
+                    disLikeIcon.classList.replace('bi-hand-thumbs-down', 'bi-hand-thumbs-down-fill')
+                    updateCount(disLikeButton, true)
+                }
+            }
+            else {
+                if(currentIsLike == isLike) {
+                    if(currentIsLike) {
+                        likeIcon.classList.replace('bi-hand-thumbs-up-fill', 'bi-hand-thumbs-up')
+                        updateCount(likeButton, false)
+                    }
+                    else {
+                        disLikeIcon.classList.replace('bi-hand-thumbs-down-fill', 'bi-hand-thumbs-down')
+                        updateCount(disLikeButton, false)
+                    }
+                }
+                else {
+                    if(isLike == true) {
+                        likeIcon.classList.replace('bi-hand-thumbs-up', 'bi-hand-thumbs-up-fill')
+                        disLikeIcon.classList.replace('bi-hand-thumbs-down-fill', 'bi-hand-thumbs-down')
+                        updateCount(likeButton, true)
+                        updateCount(disLikeButton, false)
+                    }
+                    else {
+                        likeIcon.classList.replace('bi-hand-thumbs-up-fill', 'bi-hand-thumbs-up')
+                        disLikeIcon.classList.replace('bi-hand-thumbs-down', 'bi-hand-thumbs-down-fill')
+                        updateCount(likeButton, false)
+                        updateCount(disLikeButton, true)
+                    }
+                }
+            }
+        })
+        .catch(err => {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'position-fixed bottom-0 end-0 p-3';
+            wrapper.style.zIndex = '1050';
+
+            wrapper.innerHTML = `
+                <div class="alert alert-danger alert-dismissible fade show shadow-sm small mb-0" role="alert">
+                    ${err.message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            `;
+
+            document.body.appendChild(wrapper);
+        });
+
+    }
+</script>

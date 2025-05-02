@@ -1,0 +1,38 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "array",
+  "title": "Nav Items",
+  "items": {
+    "type": "object",
+    "required": [ "text" ],
+    "properties": {
+      "text": {
+        "type": "string",
+        "minLength": 1
+      },
+      "href": { "type": "string" },
+      "dropdown": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "required": [ "text", "href" ],
+          "properties": {
+            "text": {
+              "type": "string",
+              "minLength": 1
+            },
+            "href": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "minItems": 1
+      }
+    },
+    "anyOf": [
+      { "required": [ "href" ] },
+      { "required": [ "dropdown" ] }
+    ]
+  }
+}

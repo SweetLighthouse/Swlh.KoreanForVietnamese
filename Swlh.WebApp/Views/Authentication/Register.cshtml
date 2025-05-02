@@ -1,0 +1,71 @@
+﻿@using Swlh.WebApp.Controllers
+@model Swlh.WebApp.Application.Dtos.AuthenticationDtos.RegisterDto
+
+@{
+    Layout = "_Blank";
+    ViewData["Title"] = "Đăng ký";
+}
+
+
+<div class="d-flex justify-content-center align-items-center min-vh-100 bg-white bg-opacity-75 p-4 rounded shadow">
+
+    
+    <div class="card shadow p-4 border-0" style="width: 100%; max-width: 400px;">
+        <h3 class="mb-4 text-center">Đăng ký</h3>
+        <form asp-action="Register">
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+            <div class="mb-3">
+                <label asp-for="Username" class="form-label"></label>
+                <input asp-for="Username" class="form-control" autofocus />
+                <span asp-validation-for="Username" class="text-danger small"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Email" class="form-label"></label>
+                <input asp-for="Email" class="form-control" />
+                <span asp-validation-for="Email" class="text-danger small"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Password" class="form-label"></label>
+                <input type="password" asp-for="Password" class="form-control" />
+                <span asp-validation-for="Password" class="text-danger small"></span>
+            </div>
+
+            <div class="d-grid mb-3">
+                <input type="submit" value="Đăng ký" class="btn btn-primary" />
+            </div>
+
+            <input type="hidden" name="backurl" value="@Context.Request.Query["backurl"]" />
+        </form>
+
+        <div>
+            <span>Đã có tài khoản? </span>
+            <a asp-controller="Authentication"
+               asp-action="Login"
+               asp-route-backurl="@Context.Request.Query["backurl"]">
+                Đăng nhập
+            </a>
+        </div>
+
+        <div>
+            <a asp-controller="@nameof(HomeController)[..^10]"
+               asp-action="@nameof(HomeController.Index)"
+               asp-route-backurl="@Context.Request.Query["backurl"]">
+                Về trang chủ
+            </a>
+        </div>
+    </div>
+</div>
+
+
+@* <div> *@
+@*     <button type="button" class="btn btn-outline-secondary shadow-sm px-3 py-2 rounded" onclick="history.back()"> *@
+@*         Back *@
+@*     </button> *@
+@* </div> *@
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}
