@@ -1,0 +1,14 @@
+﻿@inject IWebHostEnvironment _env
+@using System.Text.Json
+@using Swlh.WebApp.Application.Dtos.NavItems
+@{
+    var fileName = "footer.json";
+    var filePath = System.IO.Path.Combine(_env.ContentRootPath, "wwwroot", "PrivateFiles", fileName);
+    var json = File.ReadAllText(filePath);
+    var items = JsonSerializer.Deserialize<List<NavLink>>(json);
+}
+@foreach (var item in items)
+{
+    <span>|</span>
+    <a href="@item.Href">@item.Text</a>
+}

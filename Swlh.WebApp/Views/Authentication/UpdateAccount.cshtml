@@ -1,0 +1,63 @@
+﻿@using Swlh.WebApp.Application.Dtos.AuthenticationDtos
+@using Swlh.WebApp.Controllers
+@model UpdateAccountDto
+
+@{
+    Layout = "_Blank";
+    ViewData["Title"] = "Cập nhật thông tin tài khoản";
+}
+
+
+<div class="d-flex justify-content-center align-items-center min-vh-100 bg-white bg-opacity-75 p-4 rounded shadow">
+    <div class="card shadow p-4 border-0" style="width: 100%; max-width: 400px;">
+        <h3 class="mb-4 text-center">Cập nhật thông tin tài khoản</h3>
+        <form asp-controller="@nameof(AuthenticationController)[..^10]"
+              asp-action="@nameof(AuthenticationController.UpdateAccount)">
+
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+            <div class="mb-3">
+                <label asp-for="CurrentPassword" class="form-label">Mật khẩu hiện tại: </label>
+                <input type="password" asp-for="CurrentPassword" class="form-control" autofocus/>
+                <span asp-validation-for="CurrentPassword" class="text-danger small"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Username" class="form-label">Username mới: </label>
+                <input asp-for="Username" class="form-control"/>
+                <span asp-validation-for="Username" class="text-danger small"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Email" class="form-label">Email mới: </label>
+                <input asp-for="Email" class="form-control" />
+                <span asp-validation-for="Email" class="text-danger small"></span>
+            </div>
+
+            <div class="mb-3 row row-cols-2 gx-2">
+                <div class="col">
+                    <button type="button" class="w-100 btn btn-secondary" onclick="window.history.back()">Quay lại</button>
+                </div>
+                <div class="col">
+                    <button type="submit" class="w-100 btn btn-primary">Lưu</button>
+                </div>
+                
+            </div>
+            <input type="hidden" name="backurl" value="@Context.Request.Query["backurl"]" />
+        </form>
+
+        <div>
+            <a asp-controller="@nameof(HomeController)[..^10]"
+               asp-action="@nameof(HomeController.Index)"
+               asp-route-backurl="@Context.Request.Query["backurl"]">
+                Về trang chủ
+            </a>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

@@ -1,7 +1,9 @@
+﻿using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.EntityFrameworkCore;
 using Swlh.Domain.Enums;
 using Swlh.WebApp.Context;
 using Swlh.WebApp.Domain.Entities;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -9,7 +11,6 @@ builder.WebHost.ConfigureKestrel(options =>
 {
     options.Limits.MaxRequestBodySize = 500 * 1024 * 1024; // 500MB
 });
-
 
 builder.Services.AddCors(options =>
 {
@@ -106,6 +107,28 @@ app.UseStaticFiles();
 app.UseRouting();
 
 app.UseSession();
+
+
+// check for locked accounts
+app.Use(async (context, next) =>
+{
+    var session = context.Session;
+    var userIdString = session.GetString("Id");
+    var database = context.RequestServices.GetRequiredService<MainDbContext>();
+
+    if (Guid.TryParse(userIdString, out var userId) &&
+        database.Accounts.Any(acc => acc.Id == userId && acc.IsDisabled))
+    {
+        session.Clear();
+        var factory = context.RequestServices.GetRequiredService<ITempDataDictionaryFactory>();
+        var tempData = factory.GetTempData(context);
+        tempData["Msg"] = "Tài khoản đã bị khóa.";
+        context.Response.Redirect("/");
+        return;
+    }
+    await next();
+});
+
 
 app.UseCors("AllowAll");
 app.UseAuthorization();

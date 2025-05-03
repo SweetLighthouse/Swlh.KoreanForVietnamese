@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using NuGet.ProjectModel;
 using Swlh.WebApp.Application.Dtos.BaseDtos;
 using Swlh.WebApp.Application.Dtos.PostDtos;
 using Swlh.WebApp.Context;
@@ -47,15 +48,20 @@ public class PostController(MainDbContext context) : Controller
             }       
         }
 
-        if(page == null || page < 1) page = 1;
+        if (page == null || page < 1) page = 1;
         int pageSize = 12;
         int totalPosts = await mainDbContext.CountAsync();
         int totalPages = (int)Math.Ceiling((double)totalPosts / pageSize);
-        if (page > totalPages) page = totalPages;
+
+
+        // If page is greater than totalPages, set it to the last page.
+        if (page > totalPages && totalPages != 0) page = totalPages;
 
         mainDbContext = mainDbContext
             .Include(p => p.Account)
-            .Include(p => p.Tags);
+            .Include(p => p.Tags)
+            .Include(p => p.Reactions)
+            .Include(p => p.Comments);
 
         var pageResultDto = new PageResultDto<Post>
         {
@@ -69,7 +75,6 @@ public class PostController(MainDbContext context) : Controller
         };
 
         return View(pageResultDto);
-        //return View(await mainDbContext.ToListAsync());
     }
 
 
@@ -80,6 +85,7 @@ public class PostController(MainDbContext context) : Controller
         var post = await context.Posts
             .Include(p => p.Account)
             .Include(p => p.Tags)
+            .Include(p => p.Reactions)
             .Include(p => p.Comments)
                 .ThenInclude(comment => comment.Account)
             .Include(p => p.Comments)
@@ -87,6 +93,9 @@ public class PostController(MainDbContext context) : Controller
             .FirstOrDefaultAsync(m => m.Id == id);
 
         if (post == null) return NotFound();
+
+        post.AccessedCount++;
+        context.Update(post); // may be some performance issue?
 
         post.Comments = post.Comments.OrderByDescending(c => c.CreatedAt).ToList();
 

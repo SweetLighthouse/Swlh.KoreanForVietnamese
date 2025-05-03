@@ -13,10 +13,10 @@ namespace Swlh.WebApp.Domain.Entities;
     public required Role Role { get; set; }
     public bool IsDisabled { get; set; }
 
-    
-    public List<CommentOnKeyword> CommentOnWords { get; set; } = [];
-    public List<CommentOnKeyword> CommentOnWordsReacted { get; set; } = [];
-    public List<CommentOnKeywordReaction> CommentOnWordReactions { get; set; } = [];
+
+    public List<CommentOnKeyword> CommentOnWords { get; set; } = []; // bình luận từng thực hiện
+    public List<CommentOnKeyword> CommentOnWordsReacted { get; set; } = []; // bình luận được người khác tương tác
+    public List<CommentOnKeywordReaction> CommentOnWordReactions { get; set; } = []; // tương tác thực hiện trên bình luận của người khác
 
 
 

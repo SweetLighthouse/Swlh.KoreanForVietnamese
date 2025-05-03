@@ -1,0 +1,180 @@
+﻿@using Swlh.Domain.Enums
+@using Swlh.WebApp.Controllers
+@using Swlh.WebApp.Domain.Entities
+@model IEnumerable<Swlh.WebApp.Domain.Entities.Account>
+
+@{
+    ViewData["Title"] = "Quản lý tài khoản người dùng";
+}
+
+<h2 class="mb-3">Quản lý tài khoản người dùng</h2>
+
+<table class="table table-striped table-bordered">
+    <thead>
+        <tr>
+            <th>Username</th>
+            <th>Email</th>
+            <th>Quyền</th>
+            <th>Trạng thái</th>
+            <th>Tham gia ngày</th>
+            @* <th></th> *@
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>
+                    <a asp-controller="@nameof(AccountController)[..^10]"
+                       asp-action="@nameof(AccountController.Details)"
+                       asp-route-id="@item.Id">@item.Username</a>
+                </td>
+                <td>@item.Email</td>
+
+                <td>
+                    @{
+                        var roleClass = item.Role switch
+                        {
+                            Role.Admin => "btn-danger",
+                            Role.User => "btn-primary",
+                            _ => "btn-secondary"
+                        };
+                    }
+                    <button class="btn btn-sm @roleClass" data-bs-toggle="modal" 
+                            data-bs-target="#roleHandler-@item.Id">@item.Role</button>
+                    
+                    <div class="modal fade" id="roleHandler-@item.Id" tabindex="-1" role="dialog" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered">
+                            <div class="modal-content">
+                                <form method="post" asp-controller="@nameof(AccountController)[..^10]"
+                                      asp-action="@nameof(AccountController.UpdateRole)">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title">Thay đổi quyền</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+                                    </div>
+
+                                    <div class="modal-body">
+                                        <p>Thay đổi quyền của
+                                            <a asp-controller="@nameof(AccountController)[..^10]"
+                                               asp-action="@nameof(AccountController.Details)"
+                                               asp-route-id="@item.Id">@item.Username</a>:
+                                        </p>
+                                        <input type="hidden" name="accountId" value="@item.Id"/>
+                                        @Html.DropDownList(
+                                            nameof(Role), 
+                                            new SelectList(Enum.GetValues(typeof(Role)), item.Role), 
+                                            new { @class = "form-select" })
+                                    </div>
+
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                                        <button type="submit" class="btn btn-success">Lưu</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                </td>
+
+                <td>
+                    @{
+                        var statusClass = item.IsDisabled ? "btn-danger" : "btn-success";
+                        var displayText = item.IsDisabled ? "Bị khóa" : "Bình thường";
+                    }
+                    <button class="btn btn-sm @statusClass" data-bs-toggle="modal"
+                            data-bs-target="#stateHandler-@item.Id">@displayText</button>
+
+                    <div class="modal fade" id="stateHandler-@item.Id" tabindex="-1" role="dialog" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered">
+                            <div class="modal-content">
+                                <form method="post" asp-controller="@nameof(AccountController)[..^10]"
+                                      asp-action="@nameof(AccountController.UpdateState)">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title">Thay đổi trạng thái</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+                                    </div>
+
+                                    <div class="modal-body">
+                                        <p>
+                                            Thay đổi trạng thái của
+                                            <a asp-controller="@nameof(AccountController)[..^10]"
+                                               asp-action="@nameof(AccountController.Details)"
+                                               asp-route-id="@item.Id">@item.Username</a>:
+                                        </p>
+                                        <input type="hidden" name="accountId" value="@item.Id" />
+                                        @Html.DropDownList(
+                                            nameof(Account.IsDisabled),
+                                            new SelectList
+                                            (
+                                                new[] 
+                                                {
+                                                    new { Value = "true", Text = "Bị khoá" },
+                                                    new { Value = "false", Text = "Bình thường" }
+                                                }, 
+                                                "Value", "Text", 
+                                                item.IsDisabled.ToString().ToLower()
+                                            ),
+                                            new { @class = "form-select" }
+                                        )
+
+                                    </div>
+
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                                        <button type="submit" class="btn btn-success">Lưu</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                </td>
+                <td>@item.CreatedAt.ToLocalTime().ToString("dddd, dd MMMM yyyy", new System.Globalization.CultureInfo("vi-VN"))</td>
+                @* <td> *@
+                    @* <button class="btn btn-sm btn-secondary" type="button" data-bs-toggle="dropdown" aria-expanded="false"> *@
+                    @*     <i>⋯</i> *@
+                    @* </button> *@
+                    @* <ul class="dropdown-menu dropdown-menu-end"> *@
+                    @*     <li> *@
+                    @*         <button class="dropdown-item text-danger" data-bs-toggle="modal" *@
+                    @*                 data-bs-target="#forceLogout-@item.Id">Buộc đăng xuất</button> *@
+                    @*     </li> *@
+                    @* </ul> *@
+
+                    @* <div class="modal fade" id="forceLogout-@item.Id" tabindex="-1" role="dialog" aria-hidden="true"> *@
+                    @*     <div class="modal-dialog modal-dialog-centered"> *@
+                    @*         <div class="modal-content"> *@
+                    @*             <form method="post" asp-controller="@nameof(AccountController)[..^10]" *@
+                    @*                   asp-action="@nameof(AccountController.ForceLogout)"> *@
+                    @*                 <div class="modal-header"> *@
+                    @*                     <h5 class="modal-title">Thay đổi trạng thái</h5> *@
+                    @*                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button> *@
+                    @*                 </div> *@
+
+                    @*                 <div class="modal-body"> *@
+                    @*                     <p> *@
+                    @*                         Bạn có chắc chắn muốn buộc đăng xuất tài khoản *@
+                    @*                         <a asp-controller="@nameof(AccountController)[..^10]" *@
+                    @*                            asp-action="@nameof(AccountController.Details)" *@
+                    @*                            asp-route-id="@item.Id">@item.Username</a>? *@
+                    @*                     </p> *@
+                    @*                     <input type="hidden" name="accountId" value="@item.Id" /> *@
+                    @*                 </div> *@
+
+                    @*                 <div class="modal-footer"> *@
+                    @*                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button> *@
+                    @*                     <button type="submit" class="btn btn-danger">Buộc đăng xuất</button> *@
+                    @*                 </div> *@
+                    @*             </form> *@
+                    @*         </div> *@
+                    @*     </div> *@
+                    @* </div> *@
+
+                @* </td> *@
+
+
+            </tr>
+        }
+    </tbody>
+</table>

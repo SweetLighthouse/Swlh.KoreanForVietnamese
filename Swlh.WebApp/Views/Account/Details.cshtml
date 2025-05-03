@@ -1,0 +1,179 @@
+﻿@using Microsoft.EntityFrameworkCore
+@using Swlh.Domain.Enums
+@using Swlh.WebApp.Context
+@using Swlh.WebApp.Controllers
+@using Swlh.WebApp.Domain.Entities
+@inject MainDbContext context
+@model Guid
+
+@{
+    var account = await context.Accounts.Where(acc => acc.Id == Model)
+        .Include(acc => acc.CommentOnWords) // lịch sử góp ý từ vựng 
+        .ThenInclude(comment => comment.Keyword) // nội dung chung về từ vựng đó
+        .Include(acc => acc.CommentOnPosts) // lịch sử góp ý bài viết
+        .ThenInclude(comment => comment.Post) // nội dung chung về bài viết đó
+        .Include(acc => acc.Posts) // bài viết đã tạo
+        .SingleOrDefaultAsync();
+
+    if (account == null)
+    {
+        <p>Không tìm thấy người dùng.</p>
+        return;
+    }
+
+    ViewData["Title"] = account.Username;
+    Guid.TryParse(Context.Session.GetString("Id"), out Guid id);
+    var isMyAccount = Model == id;
+    var backUrl = Context.Request.Path + Context.Request.QueryString;
+}
+
+<!-- thông tin chung -->
+<div>
+    <dl class="row">
+        <dt class="col-sm-2">
+            Username:
+        </dt>
+        <dd class="col-sm-10">
+            @account.Username
+        </dd>
+        <dt class="col-sm-2">
+            Email:
+        </dt>
+        <dd class="col-sm-10">
+            @account.Email
+        </dd>
+        <dt class="col-sm-2">
+            Quyền hạn:
+        </dt>
+        <dd class="col-sm-10">
+            @switch (account.Role)
+            {
+                case Role.Admin:
+                    <span class="badge bg-danger">Quản trị viên</span>
+                    break;
+                case Role.User:
+                    <span class="badge bg-primary">Người dùng</span>
+                    break;
+                default:
+                    <span class="badge bg-secondary">Khách</span>
+                    break;
+            }
+        </dd>
+        @if (@account.IsDisabled)
+        {
+            <dt class="col-sm-2">
+                Tình trạng:
+            </dt>
+            <dd class="col-sm-10">
+                <span class="badge bg-danger">Đã bị khóa</span>
+            </dd>
+        }
+        <dt class="col-sm-2">
+            Tham gia ngày:
+        </dt>
+        <dd class="col-sm-10">
+            @account.CreatedAt.ToLocalTime().ToString("dddd, dd MMMM yyyy", new System.Globalization.CultureInfo("vi-VN"))
+        </dd>
+    </dl>
+</div>
+<!-- End of thông tin chung -->
+
+<!-- nếu là tài khoản cá nhân -->
+@if (isMyAccount)
+{
+    <div class="mb-3">
+        <a class="btn btn-sm btn-warning"
+        asp-controller="@nameof(AuthenticationController)[..^10]"
+        asp-action="@nameof(AuthenticationController.UpdateAccount)"
+        asp-route-backurl="@backUrl">
+            Sửa thông tin tài khoản
+        </a>
+        <a class="btn btn-sm btn-secondary"
+        asp-controller="@nameof(AuthenticationController)[..^10]"
+        asp-action="@nameof(AuthenticationController.ChangePassword)"
+        asp-route-backurl="@backUrl">
+            Đổi mật khẩu
+        </a>
+        <a class="btn btn-sm btn-danger"
+        asp-controller="@nameof(AuthenticationController)[..^10]"
+        asp-action="@nameof(AuthenticationController.Logout)"
+        asp-route-backurl="@backUrl">
+            Đăng xuất
+        </a>
+    </div>
+}
+<!-- End of nếu là tài khoản cá nhân -->
+
+<!-- lịch sử góp ý từ vựng -->
+<div>
+    <h3>Góp ý từ vựng</h3>
+    @if (account.CommentOnWords.Count == 0)
+    {
+        <p>Không có góp ý từ vựng nào.</p>
+    }
+    @foreach (var comment in account.CommentOnWords)
+    {
+        <div class="card mb-2">
+            <div class="card-body">
+                <p class="card-text">
+                    <a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover"
+                    asp-controller="@nameof(SearchController)[..^10]"
+                    asp-action="@nameof(SearchController.Index)"
+                    asp-route-query="@comment.Keyword.Key">@comment.Keyword.Key</a>
+                    <small class="text-muted">(@comment.CreatedAt.ToLocalTime()): </small>
+                    <span class="card-text">@comment.Content</span>
+                </p>
+            </div>
+        </div>
+    }
+</div>
+<!-- End of lịch sử góp ý từ vựng -->
+
+<!-- lịch sử góp ý bài viết -->
+<div>
+    <h3>Góp ý bài viết</h3>
+    @if (account.CommentOnPosts.Count == 0)
+    {
+        <p>Không có góp ý bài viết nào.</p>
+    }
+    @foreach (var comment in account.CommentOnPosts)
+    {
+        <div class="card mb-2">
+            <div class="card-body">
+                <p class="card-text">
+                    <a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover"
+                    asp-controller="@nameof(PostController)[..^10]"
+                    asp-action="@nameof(PostController.Details)"
+                    asp-route-id="@comment.Post.Id">@comment.Post.Title</a>
+                    <small class="text-muted">(@comment.CreatedAt.ToLocalTime()): </small>
+                    <span class="card-text">@comment.Content</span>
+                </p>
+            </div>
+        </div>
+    }
+</div>
+<!-- End of lịch sử góp ý từ vựng -->
+
+<!-- bài viết đã tạo -->
+<div>
+    <h3>Bài viết</h3>
+    @if(account.Posts.Count == 0)
+    {
+        <p>Không có bài viết nào.</p>
+    }
+    @foreach (var post in account.Posts)
+    {
+        <div class="card mb-2">
+            <div class="card-body">
+                <p class="card-text">
+                    <a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover"
+                       asp-controller="@nameof(PostController)[..^10]"
+                       asp-action="@nameof(PostController.Details)"
+                       asp-route-id="@post.Id">@post.Title</a>
+                    <small class="text-muted">(@post.CreatedAt.ToLocalTime()): </small>
+                </p>
+            </div>
+        </div>
+    }
+</div>
+<!-- End of lịch sử góp ý từ vựng -->

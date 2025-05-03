@@ -1,121 +1,76 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Swlh.Domain.Enums;
 using Swlh.WebApp.Context;
-using Swlh.WebApp.Domain.Entities;
 
 namespace Swlh.WebApp.Controllers;
 
 public class AccountController(MainDbContext context) : Controller
 {
+    private bool IsAdmin
+    {
+        get
+        {
+            if(!Enum.TryParse(HttpContext.Session.GetString("Role"), out Role role)) return false;
+            return role == Role.Admin;
+        }
+    }
+
     public async Task<IActionResult> Index()
     {
+        if(!IsAdmin)
+        {
+            TempData["Msg"] = "Bạn không có quyền truy cập vào trang này.";
+            return RedirectToAction(nameof(HomeController.Index), nameof(HomeController)[..^10]);
+        }
         return View(await context.Accounts.ToListAsync());
     }
 
-    // GET: Accounts/Details/5
-    public async Task<IActionResult> Details(Guid? id)
+    public async Task<IActionResult> UpdateRole([FromForm] Guid? accountId, [FromForm] Role? role)
     {
-        if (id == null)
+        if (!IsAdmin)
         {
-            return NotFound();
+            TempData["Msg"] = "Bạn không có quyền truy cập vào trang này.";
+            return RedirectToAction(nameof(HomeController.Index), nameof(HomeController)[..^10]);
         }
 
-        var account = await context.Accounts
-            .FirstOrDefaultAsync(m => m.Id == id);
-        if (account == null)
-        {
-            return NotFound();
-        }
-
-        return View(account);
-    }
-
-    // GET: Accounts/Edit/5
-    public async Task<IActionResult> Edit(Guid? id)
-    {
-        if (id == null)
-        {
-            return NotFound();
-        }
-
-        var account = await context.Accounts.FindAsync(id);
-        if (account == null)
-        {
-            return NotFound();
-        }
-        return View(account);
-    }
-
-    // POST: Accounts/Edit/5
-    // To protect from overposting attacks, enable the specific properties you want to bind to.
-    // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Edit(Guid id, [Bind("Id,Username,Password,Email,Role,IsDisabled,CreatedAt,UpdatedAt,AccessedCount")] Account account)
-    {
-        if (id != account.Id)
-        {
-            return NotFound();
-        }
-
-        if (ModelState.IsValid)
-        {
-            try
-            {
-                context.Update(account);
-                await context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!AccountExists(account.Id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
-            return RedirectToAction(nameof(Index));
-        }
-        return View(account);
-    }
-
-    // GET: Accounts/Delete/5
-    public async Task<IActionResult> Delete(Guid? id)
-    {
-        if (id == null)
-        {
-            return NotFound();
-        }
-
-        var account = await context.Accounts
-            .FirstOrDefaultAsync(m => m.Id == id);
-        if (account == null)
-        {
-            return NotFound();
-        }
-
-        return View(account);
-    }
-
-    // POST: Accounts/Delete/5
-    [HttpPost, ActionName("Delete")]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> DeleteConfirmed(Guid id)
-    {
-        var account = await context.Accounts.FindAsync(id);
-        if (account != null)
-        {
-            context.Accounts.Remove(account);
-        }
-
+        if (accountId == null || role == null) return BadRequest();
+        var account = await context.Accounts.FirstOrDefaultAsync(a => a.Id == accountId);
+        if (account == null) return NotFound();
+        account.Role = role.Value;
+        context.Update(account);
         await context.SaveChangesAsync();
+        TempData["Msg"] = $"Đã thay đổi quyền của {account.Username} thành {role}.";
         return RedirectToAction(nameof(Index));
     }
 
-    private bool AccountExists(Guid id)
+    public async Task<IActionResult> UpdateState([FromForm] Guid? accountId, [FromForm] bool? isDisabled)
     {
-        return context.Accounts.Any(e => e.Id == id);
+        if (!IsAdmin)
+        {
+            TempData["Msg"] = "Bạn không có quyền truy cập vào trang này.";
+            return RedirectToAction(nameof(HomeController.Index), nameof(HomeController)[..^10]);
+        }
+
+        if (accountId == null || isDisabled == null) return BadRequest();
+        var account = await context.Accounts.FirstOrDefaultAsync(a => a.Id == accountId);
+        if (account == null) return NotFound();
+        account.IsDisabled = isDisabled.Value;
+        context.Update(account);
+        await context.SaveChangesAsync();
+        var displayText = account.IsDisabled ? "Bị khóa" : "Bình thường";
+        TempData["Msg"] = $"Đã thay đổi trạng thái của {account.Username} thành {displayText}.";
+        return RedirectToAction(nameof(Index));
+    }
+
+    // GET: Accounts/Details/5
+    public IActionResult Details(Guid? id)
+    {
+        if (!IsAdmin)
+        {
+            TempData["Msg"] = "Bạn không có quyền truy cập vào trang này.";
+            return RedirectToAction(nameof(HomeController.Index), nameof(HomeController)[..^10]);
+        }
+        return View(id);
     }
 }

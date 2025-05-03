@@ -2,13 +2,13 @@
 @* <link href="https://cdn.jsdelivr.net/npm/jsoneditor@latest/dist/jsoneditor.min.css" rel="stylesheet" type="text/css"> *@
 
 @{
-    ViewData["Title"] = "Quản lý điều hướng";
+    ViewData["Title"] = "Quản lý footer";
 }
 
-<h3 class="text-dark">Chỉnh sửa thanh điều hướng</h3>
+<h3 class="text-dark">Chỉnh sửa footer</h3>
 
 <script src="~/lib/json-editor/jsoneditor@latest.js"></script>
-<link id="oldStylesheet" href="~/lib/json-editor/jsoneditor.min.css" rel="stylesheet" type="text/css" />
+<link href="~/lib/json-editor/jsoneditor.min.css" rel="stylesheet" type="text/css" />
 
 <div id="editor" style="height: 80vh;" class="mb-2"></div>
 <div>
@@ -22,8 +22,8 @@
 
     // Load schema and json
     Promise.all([
-        fetch('/PrivateFiles/nav_schema.json').then(r => r.json()),
-        fetch(`/PrivateFiles/nav.json?nocache=${Date.now()}`).then(r => r.json())
+        fetch('/PrivateFiles/footer_schema.json').then(r => r.json()),
+        fetch(`/PrivateFiles/footer.json?nocache=${Date.now()}`).then(r => r.json())
     ]).then(([schema, json]) => {
         editor = new JSONEditor(container, {
             mode: 'tree',
@@ -36,7 +36,7 @@
     function save() {
         const updated = editor.get();
         console.log(updated);
-        fetch('/nav/save', {
+        fetch('/footer/save', {
             method: 'POST',
             body: JSON.stringify(updated),
             headers: { 'Content-Type': 'application/json' }
@@ -45,12 +45,12 @@
             if (!response.ok) throw new Error("Failed to save");
         })
         .then(() => {
-            location.reload(); // reload page on success
+            location.reload();
         })
         .catch(err => {
             console.error('Save error:', err);
             alert('Failed to save changes.');
         });
     }
-    // document.getElementById('oldStylesheet').disabled = true;
+
 </script>

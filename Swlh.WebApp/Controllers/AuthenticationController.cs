@@ -1,7 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.VisualBasic;
 using Swlh.Domain.Enums;
 using Swlh.WebApp.Application.Dtos.AuthenticationDtos;
 using Swlh.WebApp.Context;
@@ -72,6 +70,12 @@ public class AuthenticationController(MainDbContext context) : Controller
             return View(dto);
         }
 
+        if(account.IsDisabled)
+        {
+            ModelState.AddModelError("", "Tài khoản đã bị khóa.");
+            return View(dto);
+        }
+
         HttpContext.Session.SetString("Id", account.Id.ToString());
         HttpContext.Session.SetString("Username", account.Username);
         HttpContext.Session.SetString("Role", account.Role.ToString());
@@ -104,27 +108,105 @@ public class AuthenticationController(MainDbContext context) : Controller
         }
     }
 
-    public async Task<IActionResult> MyAccount()
+    public IActionResult MyAccount()
     {
         if(AccountId == Guid.Empty)
         {
             TempData["Msg"] = "Vui lòng đăng nhập để xem thông tin tài khoản.";
             return RedirectToAction(nameof(Login));
         }
-        var account = await context.Accounts.Where(acc => acc.Id == AccountId)
-            .Include(acc => acc.CommentOnWords)
-            .ThenInclude(comment => comment.Keyword)
-            .SingleOrDefaultAsync();
-
-        if(account == null)
-        {
-            TempData["Msg"] = "Tài khoản không tồn tại.";
-            return RedirectToAction(nameof(Login));
-        }
-        return View(account);
+        return View("~/Views/Account/Details.cshtml", AccountId);
     }
 
     public IActionResult UpdateAccount() => View();
 
+
+    [HttpPost]
+    public IActionResult UpdateAccount([FromForm] UpdateAccountDto? dto, string? backurl)
+    {
+        if (dto == null)
+        {
+            ModelState.AddModelError("", "Dữ liệu không hợp lệ.");
+            return View(dto);
+        }
+        if (!ModelState.IsValid) return View(dto);
+
+        var currentAccount = context.Accounts.Find(AccountId);
+        if (currentAccount == null)
+        {
+            ModelState.AddModelError("", "Không tìm thấy tài khoản.");
+            return View(dto);
+        }
+
+        // kiểm tra mật khẩu hiện tại
+        if (!BCrypt.Net.BCrypt.Verify(dto.CurrentPassword, currentAccount.Password))
+        {
+            ModelState.AddModelError(nameof(dto.CurrentPassword), "Mật khẩu hiện tại không chính xác.");
+            return View(dto);
+        }
+
+        // kiểm tra tên tài khoản mới
+        if (context.Accounts.Any(acc => acc.Username == dto.Username && acc != currentAccount))
+        {
+            ModelState.AddModelError(nameof(dto.Username), "Tên tài khoản đã tồn tại.");
+            return View(dto);
+        }
+        else currentAccount.Username = dto.Username;
+
+        // kiểm tra email mới
+        if (context.Accounts.Any(acc => acc.Email == dto.Email && acc != currentAccount))
+        {
+            ModelState.AddModelError(nameof(dto.Email), "Địa chỉ email đã sử dụng.");
+            return View(dto);
+        }
+        else currentAccount.Email = dto.Email;
+
+        context.Entry(currentAccount).State = EntityState.Modified;
+        context.SaveChanges();
+
+        TempData["Msg"] = "Cập nhật tài khoản thành công.";
+        return string.IsNullOrEmpty(backurl)
+            ? RedirectToAction("Index", "Home")
+            : Redirect(backurl);
+    }
+
+
+
     public IActionResult ChangePassword() => View();
+
+
+    [HttpPost]
+    public IActionResult ChangePassword([FromForm] ChangePasswordDto? dto, string? backurl)
+    {
+        if (dto == null)
+        {
+            ModelState.AddModelError("", "Dữ liệu không hợp lệ.");
+            return View(dto);
+        }
+        if (!ModelState.IsValid) return View(dto);
+
+        var currentAccount = context.Accounts.Find(AccountId);
+        if (currentAccount == null)
+        {
+            ModelState.AddModelError("", "Không tìm thấy tài khoản.");
+            return View(dto);
+        }
+
+        // kiểm tra mật khẩu hiện tại
+        if (!BCrypt.Net.BCrypt.Verify(dto.OldPassword, currentAccount.Password))
+        {
+            ModelState.AddModelError(nameof(dto.OldPassword), "Mật khẩu hiện tại không chính xác.");
+            return View(dto);
+        }
+
+        else currentAccount.Password = BCrypt.Net.BCrypt.HashPassword(dto.NewPassword);
+
+        context.Entry(currentAccount).State = EntityState.Modified;
+        context.SaveChanges();
+
+        TempData["Msg"] = "Thay đổi mật khẩu thành công.";
+        return string.IsNullOrEmpty(backurl)
+            ? RedirectToAction("Index", "Home")
+            : Redirect(backurl);
+    }
 }

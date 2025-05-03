@@ -8,7 +8,7 @@
 @model PageResultDto<Post>
 
 @{
-    ViewData["Title"] = "Index";
+    ViewData["Title"] = "Danh sách bài viết";
 }
 
 <h1>Danh sách bài viết</h1>
@@ -21,17 +21,18 @@
 
 <form class="mb-2" method="get">
 
-    <div class="form-floating mb-2">
-        <input type="text" class="form-control" placeholder="..." id="PartOfTitle"
-        name="PartOfTitle" value="@TempData[nameof(PostSearchDto.PartOfTitle)]" />
-        <label for="PartOfTitle">Tiêu đề</label>
+    <div class="row row-cols-1 row-cols-lg-2 gx-1 mb-2">
+        <div class="form-floating">
+            <input type="text" class="form-control" placeholder="..." id="PartOfTitle"
+                   name="PartOfTitle" value="@TempData[nameof(PostSearchDto.PartOfTitle)]" />
+            <label for="PartOfTitle">Tiêu đề</label>
+        </div>
+        <div class="form-floating">
+            <input type="text" class="form-control" placeholder="..." id="tagInput">
+            <label for="tagInput">Nhập các tag rồi Enter...</label>
+        </div>
     </div>
-
-    <div class="form-floating mb-2">
-        <input type="text" class="form-control" placeholder="..." id="tagInput">
-        <label for="tagInput">Nhập các tag rồi Enter...</label>
-        <div id="tagHolder" class="d-flex flex-wrap gap-2 mt-2"></div>
-    </div>
+    <div id="tagHolder" class="d-flex flex-wrap gap-2 mb-2"></div>
 
     <div class="form-group mb-2 d-flex justify-content-between">
         <div>
@@ -157,6 +158,11 @@
     });
 </script>
 
+@{
+    string query = Context.Request.Query.TryGetValue("query", out var val) ? val.ToString() : string.Empty;
+    Guid.TryParse(Context.Session.GetString("Id"), out var id);
+}
+
 <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 gx-1 mb-2">
     @foreach (var item in Model.Items)
     {
@@ -176,14 +182,39 @@
 
                     <h4>@item.Title</h4>
                 </a>
-                <div class="mt-auto mb-3">
+                <div class="mt-auto mb-2">
                     @foreach (var tag in item.Tags)
                     {
-                        <span class="badge bg-secondary">@tag.Value</span>
+                        <a asp-controller="@nameof(PostController)[..^10]"
+                           asp-action="@nameof(PostController.Index)"
+                           asp-route-TagNames="@tag.Value"
+                           class="badge bg-secondary text-decoration-none">@tag.Value</a>
                     }
                 </div>
-                <div>
-                    <i class="bi bi-hand-thumbs-up"></i> @item.
+                <div class="mb-2">
+                    @if (item.Reactions.Any(r => r.IsLike && r.AccountId == id))
+                    {
+                        <i class="bi bi-hand-thumbs-up-fill"></i>
+                    }
+                    else
+                    {
+                        <i class="bi bi-hand-thumbs-up"></i>
+                    }
+                    <span>@item.Reactions.Where(r => r.IsLike).Count()</span>
+                    |
+                    @if (item.Reactions.Any(r => !r.IsLike && r.AccountId == id))
+                    {
+                        <i class="bi bi-hand-thumbs-down-fill"></i>
+                    }
+                    else
+                    {
+                        <i class="bi bi-hand-thumbs-down"></i>
+                    }
+                    <span>@item.Reactions.Where(r => !r.IsLike).Count()</span>
+                    |
+                    <i class="bi bi-chat"></i>
+                    <span>@item.Comments.Count()</span>
+
                 </div>
                 @if (Enum.TryParse(Context.Session.GetString("Role"), out role) && role == Role.Admin)
                 {
