@@ -28,9 +28,6 @@ namespace Swlh.WebApp.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<int>("AccessedCount")
-                        .HasColumnType("int");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
@@ -73,9 +70,6 @@ namespace Swlh.WebApp.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<int>("AccessedCount")
-                        .HasColumnType("int");
-
                     b.Property<Guid?>("AccountId")
                         .HasColumnType("uniqueidentifier");
 
@@ -86,11 +80,6 @@ namespace Swlh.WebApp.Migrations
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
-
-                    b.Property<bool>("IsDisabled")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bit")
-                        .HasDefaultValue(false);
 
                     b.Property<string>("Key")
                         .IsRequired()
@@ -132,9 +121,6 @@ namespace Swlh.WebApp.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<int>("AccessedCount")
-                        .HasColumnType("int");
-
                     b.Property<Guid?>("AccountId")
                         .HasColumnType("uniqueidentifier");
 
@@ -145,9 +131,6 @@ namespace Swlh.WebApp.Migrations
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
-
-                    b.Property<bool>("IsDisabled")
-                        .HasColumnType("bit");
 
                     b.Property<Guid>("PostId")
                         .HasColumnType("uniqueidentifier");
@@ -188,9 +171,6 @@ namespace Swlh.WebApp.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<int>("AccessedCount")
-                        .HasColumnType("int");
-
                     b.Property<string>("ContentType")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -216,15 +196,21 @@ namespace Swlh.WebApp.Migrations
 
             modelBuilder.Entity("Swlh.WebApp.Domain.Entities.Example", b =>
                 {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<string>("Korean")
+                        .IsRequired()
                         .HasMaxLength(1023)
                         .HasColumnType("nvarchar(1023)");
 
                     b.Property<string>("Vietnamese")
+                        .IsRequired()
                         .HasMaxLength(1023)
                         .HasColumnType("nvarchar(1023)");
 
-                    b.HasKey("Korean", "Vietnamese");
+                    b.HasKey("Id");
 
                     b.ToTable("Example", (string)null);
                 });
@@ -330,11 +316,12 @@ namespace Swlh.WebApp.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<int>("AccessedCount")
-                        .HasColumnType("int");
-
                     b.Property<Guid?>("AccountId")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Answer")
+                        .HasMaxLength(65535)
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -344,15 +331,15 @@ namespace Swlh.WebApp.Migrations
                         .HasMaxLength(65535)
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<bool>("IsSolved")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bit")
-                        .HasDefaultValue(false);
-
                     b.Property<string>("Link")
                         .IsRequired()
                         .HasMaxLength(1023)
                         .HasColumnType("nvarchar(1023)");
+
+                    b.Property<int>("State")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(0);
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -369,15 +356,6 @@ namespace Swlh.WebApp.Migrations
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
-
-                    b.Property<int>("AccessedCount")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("datetime2");
 
                     b.Property<string>("Value")
                         .IsRequired()

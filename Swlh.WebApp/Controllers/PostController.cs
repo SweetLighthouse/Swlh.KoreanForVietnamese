@@ -22,7 +22,7 @@ public class PostController(MainDbContext context) : Controller
 
     public async Task<IActionResult> Index([FromQuery] PostSearchDto? dto, [FromQuery] int? page)
     {
-        var mainDbContext = context.Posts
+        var query = context.Posts
             .OrderByDescending(p => p.UpdatedAt)
             .AsQueryable();
 
@@ -31,7 +31,7 @@ public class PostController(MainDbContext context) : Controller
             if (!string.IsNullOrWhiteSpace(dto.PartOfTitle))
             {
                 var titleFilter = dto.PartOfTitle.ToLower();
-                mainDbContext = mainDbContext
+                query = query
                     .Where(p => p.Title.ToLower().Contains(titleFilter));
 
                 TempData[nameof(PostSearchDto.PartOfTitle)] = dto.PartOfTitle;
@@ -41,7 +41,7 @@ public class PostController(MainDbContext context) : Controller
 
             if (dto.TagNames is not null && dto.TagNames.Count > 0)
             {
-                mainDbContext = mainDbContext
+                query = query
                     .Where(p => p.Tags.Any(tag => dto.TagNames.Contains(tag.Value.ToLower())));
                 
                 TempData[nameof(PostSearchDto.TagNames)] = dto.TagNames;
@@ -50,15 +50,15 @@ public class PostController(MainDbContext context) : Controller
 
         if (page == null || page < 1) page = 1;
         int pageSize = 12;
-        int totalPosts = await mainDbContext.CountAsync();
+        int totalPosts = await query.CountAsync();
         int totalPages = (int)Math.Ceiling((double)totalPosts / pageSize);
 
 
         // If page is greater than totalPages, set it to the last page.
         if (page > totalPages && totalPages != 0) page = totalPages;
 
-        mainDbContext = mainDbContext
-            .Include(p => p.Account)
+        query = query
+            //.Include(p => p.Account)
             .Include(p => p.Tags)
             .Include(p => p.Reactions)
             .Include(p => p.Comments);
@@ -68,7 +68,7 @@ public class PostController(MainDbContext context) : Controller
             Page = page.Value,
             PageSize = pageSize,
             TotalItem = totalPosts,
-            Items = await mainDbContext
+            Items = await query
                 .Skip((page.Value - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync()
@@ -94,8 +94,10 @@ public class PostController(MainDbContext context) : Controller
 
         if (post == null) return NotFound();
 
-        post.AccessedCount++;
+        post.AccessedCount += 1; 
         context.Update(post); // may be some performance issue?
+        context.Entry(post).Property(p => p.AccessedCount).IsModified = true;
+        await context.SaveChangesAsync(); // i dont need to await this
 
         post.Comments = post.Comments.OrderByDescending(c => c.CreatedAt).ToList();
 
@@ -160,7 +162,7 @@ public class PostController(MainDbContext context) : Controller
         context.Add(post);
         await context.SaveChangesAsync();
         TempData["Msg"] = "Thêm bài viết thành công.";
-        return RedirectToAction(nameof(Index));
+        return RedirectToAction(nameof(Details), new { id = post.Id });
     }
 
     // GET: Post/Edit/5
@@ -180,7 +182,7 @@ public class PostController(MainDbContext context) : Controller
             Body = post.Body,
             Description = post.Description,
             Id = post.Id,
-            IsDisabled = post.IsDisabled,
+            //IsDisabled = post.IsDisabled,
             Title = post.Title,
             TagNames = post.Tags.Select(tag => tag.Value).ToList()
         });
@@ -291,8 +293,8 @@ public class PostController(MainDbContext context) : Controller
                 throw;
             }
         }
-        
-        return RedirectToAction(nameof(Index));
+
+        return RedirectToAction(nameof(Details), new { id = post.Id });
     }
 
     // GET: Post/Delete/5

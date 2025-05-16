@@ -3,28 +3,33 @@
 @model Swlh.WebApp.Domain.Entities.Post
 
 @{
+    Layout = "_WithSideBar";
     ViewData["Title"] = Model.Title;
+    bool isAdmin = Enum.TryParse(Context.Session.GetString("Role"), out Role role) && role == Role.Admin;
 }
 
 <div>
     <h2>@Model.Title</h2>
     <span class="small">@Model.CreatedAt.ToLocalTime().ToString("dddd, dd MMMM yyyy HH:mm:ss", new System.Globalization.CultureInfo("vi-VN"))</span>
     <span>Số lượt xem: @Model.AccessedCount</span>
+    <span><em>Người đăng bài: <a asp-controller="@nameof(AccountController)[..^10]"
+    asp-action="@nameof(AccountController.Details)"
+    asp-route-id="@Model.AccountId">@Model.Account.Username</a></em></span>
     <div class="mt-auto mb-2">
         @foreach (var tag in Model.Tags)
         {
             <a asp-controller="@nameof(PostController)[..^10]"
-               asp-action="@nameof(PostController.Index)"
-               asp-route-TagNames="@tag.Value"
-               class="badge bg-secondary text-decoration-none">@tag.Value</a>
+            asp-action="@nameof(PostController.Index)"
+            asp-route-TagNames="@tag.Value"
+            class="badge bg-secondary text-decoration-none">@tag.Value</a>
         }
     </div>
 
-    @if (Enum.TryParse(Context.Session.GetString("Role"), out Role role) && role == Role.Admin)
+    @if (isAdmin)
     {
         <div class="mb-2">
             <a asp-controller="@nameof(PostController)[..^10]" asp-action="@nameof(PostController.Edit)"
-               asp-route-id="@Model.Id" class="btn btn-warning">Sửa</a>
+            asp-route-id="@Model.Id" class="btn btn-warning">Sửa</a>
 
             <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deletePost-@Model.Id">Xóa</button>
         </div>
@@ -35,7 +40,7 @@
             <div class="modal-dialog modal-dialog-centered">
                 <div class="modal-content">
                     <form method="post" asp-controller="@nameof(PostController)[..^10]"
-                          asp-action="@nameof(PostController.DeleteConfirmed)">
+                    asp-action="@nameof(PostController.DeleteConfirmed)">
                         <div class="modal-header">
                             <h5 class="modal-title">Xác nhận xóa</h5>
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
@@ -56,9 +61,9 @@
             </div>
         </div>
     }
-    
+
     <link rel="stylesheet" href="/css/tinymce_custom.css">
-    <link rel="stylesheet" href="/lib/tinymce/skins/content/default/content.min.css" />
+    @* <link rel="stylesheet" href="/lib/tinymce/skins/content/default/content.min.css" /> *@
     <div class="container-fluid mb-5">
         @Html.Raw(Model.Body)
     </div>
@@ -99,16 +104,16 @@
 <!-- End of Lượt reaction của post -->
 
 <!-- Bình luận góp ý -->
-<div class="mb-5">
+<div>
     <h3 class="mb-3">Bình luận góp ý</h3>
 
     <!-- Comment Form -->
     @if (id != Guid.Empty)
     {
         <form method="post" id="myForm"
-              asp-controller="@nameof(CommentOnPostController)[..^10]"
-              asp-action="@nameof(CommentOnPostController.Handle)"
-              class="d-flex justify-content-between gap-2 mb-3">
+        asp-controller="@nameof(CommentOnPostController)[..^10]"
+        asp-action="@nameof(CommentOnPostController.Handle)"
+        class="d-flex justify-content-between gap-2 mb-3">
             <textarea id="myInput" name="Content" class="form-control" placeholder="Nhập bình luận..."></textarea>
             <button type="submit" name="type" value="add" class="btn btn-primary align-self-start">Gửi</button>
         </form>
@@ -117,9 +122,9 @@
     {
         <p>
             <a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover"
-               asp-controller="Authentication"
-               asp-action="Login"
-               asp-route-backurl="@(Context.Request.Path + Context.Request.QueryString)">Đăng nhập</a>
+            asp-controller="Authentication"
+            asp-action="Login"
+            asp-route-backurl="@(Context.Request.Path + Context.Request.QueryString)">Đăng nhập</a>
             để góp ý và phát triển cộng đồng!
         </p>
     }
@@ -140,8 +145,12 @@
                         @if (comment.AccountId == id)
                         {
                             <li>
-                                <button class="dropdown-item" data-bs-toggle="modal" data-bs-target="#editComment-@comment.Id">Chỉnh sửa</button>
+                                <button class="dropdown-item" data-bs-toggle="modal" data-bs-target="#editComment-@comment.Id">Sửa</button>
                             </li>
+                        }
+
+                        @if (comment.AccountId == id || isAdmin)
+                        {
                             <li>
                                 <button class="dropdown-item text-danger" data-bs-toggle="modal" data-bs-target="#deleteComment-@comment.Id">Xóa</button>
                             </li>

@@ -1,0 +1,18 @@
+﻿@using Swlh.WebApp.Controllers
+@{
+    Layout = "_Blank";
+    ViewData["Title"] = "Quên mật khẩu";
+}
+
+
+<div class="d-flex justify-content-center align-items-center min-vh-100 p-4 rounded shadow">
+    <div class="card shadow p-4 border-0" style="width: 100%; max-width: 400px;">
+        <h3 class="mb-4 text-center">Đã xử lý.</h3>
+        <p>Chúng tôi đã gửi đến email của bạn đường dẫn để reset mật khẩu. Hãy vào email của bạn và làm theo hướng dẫn.</p>
+        <a asp-controller="@nameof(HomeController)[..^10]"
+           asp-action="@nameof(HomeController.Index)"
+           asp-route-backurl="@Context.Request.Query["backurl"]">
+            Về trang chủ
+        </a>
+    </div>
+</div>

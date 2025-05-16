@@ -1,0 +1,28 @@
+﻿@model Swlh.WebApp.Domain.Entities.Example
+
+@{
+    ViewData["Title"] = "Xoá từ vựng";
+}
+<h3>Bạn có chắc muốn xoá ví dụ này?</h3>
+<div>
+    <dl class="row">
+        <dt class="col-sm-2 fw-bold">
+            @Html.DisplayNameFor(model => model.Korean)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.Korean)
+        </dd>
+        <dt class="col-sm-2 fw-bold">
+            @Html.DisplayNameFor(model => model.Vietnamese)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.Vietnamese)
+        </dd>
+    </dl>
+
+    <form asp-action="Delete">
+        <input type="hidden" asp-for="Id" />
+        <input type="submit" value="Xoá" class="btn btn-danger" />
+        <button type="button" class="btn btn-secondary" onclick="window.history.back()">Quay lại</button>
+    </form>
+</div>

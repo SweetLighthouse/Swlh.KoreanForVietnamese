@@ -1,0 +1,80 @@
+﻿@using Swlh.WebApp.Application.Services
+@using Swlh.WebApp.Controllers
+@using Swlh.WebApp.Domain.Enums
+@model Swlh.WebApp.Domain.Entities.Report
+
+@{
+    ViewData["Title"] = "Xử lý báo cáo";
+}
+
+<h1>Xử lý báo cáo</h1>
+<div class="row">
+    <div class="col-12 col-lg-8">
+        <form asp-action="Handle">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <input type="hidden" asp-for="Id" />
+
+            <div class="row w-100">
+                <div class="col-12 col-md-2 mb-2">
+                    <strong>User:</strong>
+                </div>
+                <div class="col-12 col-md-10 mb-2">
+                    <a asp-controller="@nameof(AccountController)[..^10]"
+                       asp-action="@nameof(AccountController.Details)"
+                       asp-route-id="@Model.Account.Id"
+                       target="_blank">@Model.Account.Username</a>
+                </div>
+
+                <div class="col-12 col-md-2 mb-2">
+                    <strong>Link:</strong>
+                </div>
+                <div class="col-12 col-md-10 mb-2">
+                    <a href="@Model.Link" target="_blank">@Model.Link</a>
+                </div>
+
+                <div class="col-12 mb-2">
+                    <strong>Mô tả:</strong>
+                </div>
+                <div class="col-12 mb-2">
+                    <span>@Model.Description</span>
+                </div>
+
+            </div>
+
+            <hr/>
+
+            @{
+                var statusItems = Enum
+                .GetValues(typeof(ReportStatus))
+                .Cast<ReportStatus>()
+                .Select(x => new SelectListItem
+            {
+                Text = x.GetDisplayName(),
+                Value = ((int)x).ToString(),
+                Selected = x == Model.State
+            });
+            }
+
+            <div class="mb-2 row align-items-center">
+                <label class="col-12 col-md-2 col-form-label fw-bold">
+                    Trạng thái:
+                </label>
+                <div class="col-12 col-md-10">
+                    @Html.DropDownListFor(m => m.State, statusItems, new { @class = "form-select" })
+                </div>
+            </div>
+            
+            <div class="form-group mb-2">
+                <label asp-for="Answer" class="control-label mb-1">
+                    <strong>Câu trả lời: </strong>
+                </label>
+                <textarea rows="10" asp-for="Answer" class="form-control" required></textarea>
+                <span asp-validation-for="Answer" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <button type="submit" class="btn btn-primary">Lưu</button>
+                <button class="btn btn-secondary" onclick="window.history.back()">Quay lại</button>
+            </div>
+        </form>
+    </div>
+</div>

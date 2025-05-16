@@ -16,14 +16,18 @@ public class SearchController(MainDbContext context, IHttpClientFactory httpClie
 
     public async Task<IActionResult> Index(string? query)
     {
-        if (string.IsNullOrWhiteSpace(query)) return View();
+        // validate query
+        if (string.IsNullOrWhiteSpace(query)) return View("ErrorView", model: "Vui lòng nhập từ khoá.");
         query = query.Trim();
+        if (query.Length > 450) return View("ErrorView", model: "Từ khoá quá dài. Vui lòng thử từ khoá ngắn hơn.");
 
-        var keywordEntry = await context.Keywords.FindAsync(query);
         var searchResult = new SearchMaybek();
 
+        // check xem đã từng tìm kiếm từ này chưa
+        var keywordEntry = await context.Keywords.FindAsync(query);
         if (keywordEntry != null)
         {
+            // rồi: ko cần phải đi tìm lại
             keywordEntry.SearchCount += 1;
             context.Entry(keywordEntry).State = EntityState.Modified;
         }

@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Swlh.WebApp.Domain.Entities;
 
-[Table(nameof(Entities.Tag))] public class Tag : BaseEntity
+[Table(nameof(Entities.Tag))] public class Tag
 {
     public Guid Id { get; set; }
     [MaxLength(255)] public string Value { get; set; } = string.Empty;

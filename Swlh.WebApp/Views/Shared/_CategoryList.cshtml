@@ -15,17 +15,17 @@
     if (hasHref && !hasDropdown)
     {
         <li class="nav-item">
-            <a class="btn btn-light nav-link text-dark py-3" href="@item.Href">@item.Text</a>
+            <a class="text-start px-2 btn btn-light nav-link text-dark py-3" href="@item.Href">@item.Text</a>
         </li>
     }
     else if (!hasHref && hasDropdown)
     {
         <li class="nav-item">
-            <div class="btn-group">
-                <button type="button" class="btn btn-light nav-link text-dark py-3 dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+            <div class="d-flex flex-wrap btn-group w-100 w-sm-auto">
+                <button type="button" class="d-flex flex-wrap justify-content-between align-items-center gap-sm-2 ps-2 pe-3 pe-md-2 btn btn-light nav-link text-dark py-3 dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
                     @item.Text
                 </button>
-                <ul class="m-0 dropdown-menu">
+                <ul class="m-0 dropdown-menu w-100 w-sm-auto">
                     @foreach (var a in item.Dropdown!)
                     {
                         <li class="nav-item">
@@ -39,10 +39,10 @@
     else if (hasHref && hasDropdown)
     {
         <li class="nav-item">
-            <div class="btn-group d-flex align-items-center">
-                <a href="@item.Href" class="nav-link text-dark py-3 btn btn-light">@item.Text</a>
-                <button type="button" class="nav-link text-dark py-3 dropdown-toggle btn btn-light" data-bs-toggle="dropdown" aria-expanded="false"></button>
-                <ul class="m-0 dropdown-menu">
+            <div class="btn-group flex-wrap w-100">
+                <a href="@item.Href" class="text-start nav-link text-dark py-3 px-2 px-md-1 btn btn-light flex-grow-1">@item.Text</a>
+                <button type="button" class="nav-link text-dark py-3 dropdown-toggle btn btn-light flex-grow-0 px-3 px-md-2" data-bs-toggle="dropdown" aria-expanded="false"></button>
+                <ul class="m-0 w-100 dropdown-menu">
                     @foreach (var a in item.Dropdown!)
                     {
                         <li class="nav-item">

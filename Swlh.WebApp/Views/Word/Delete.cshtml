@@ -1,0 +1,53 @@
+﻿@model Swlh.WebApp.Domain.Entities.Word
+
+@{
+    ViewData["Title"] = "Xoá từ vựng";
+}
+
+<h3>Bạn có chắc muốn xoá từ vựng này?</h3>
+<div>
+    <dl class="row">
+        <dt class="col-sm-2 fw-bold">
+            @Html.DisplayNameFor(model => model.WordKr)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.WordKr)
+        </dd>
+        <dt class="col-sm-2 fw-bold">
+            @Html.DisplayNameFor(model => model.WordVn)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.WordVn)
+        </dd>
+        <dt class="col-sm-2 fw-bold">
+            @Html.DisplayNameFor(model => model.Type)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.Type)
+        </dd>
+        <dt class="col-sm-2 fw-bold">
+            @Html.DisplayNameFor(model => model.Pronunciation)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.Pronunciation)
+        </dd>
+        <dt class="col-sm-2 fw-bold">
+            @Html.DisplayNameFor(model => model.MeaningKr)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.MeaningKr)
+        </dd>
+        <dt class="col-sm-2 fw-bold">
+            @Html.DisplayNameFor(model => model.MeaningVn)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.MeaningVn)
+        </dd>
+    </dl>
+
+    <form asp-action="Delete">
+        <input type="hidden" asp-for="Id" />
+        <input type="submit" value="Xoá" class="btn btn-danger" />
+        <button type="button" class="btn btn-secondary" onclick="window.history.back()">Quay lại</button>
+    </form>
+</div>

@@ -1,0 +1,48 @@
+﻿@using Swlh.WebApp.Domain.Entities
+@model List<Example>
+
+@{
+    var firsts = Model.Take(5).ToList();
+    var remains = Model.Skip(5).ToList();
+}
+
+<div class="card mb-2">
+    <div class="card-body">
+        <h5 class="card-title m-0">Từ vựng liên quan</h5>
+    </div>
+    <ul class="list-group list-group-flush">
+        @foreach (var item in firsts)
+        {
+            <li class="list-group-item">
+                <p class="mb-2">@item.Korean</p>
+                <p class="m-0">@item.Vietnamese</p>
+            </li>
+        }
+    </ul>
+
+    @if (remains.Count > 0)
+    {
+        <div class="collapse" id="moreExamples">
+            <ul class="list-group list-group-flush">
+                @foreach (var item in remains)
+                {
+                    <li class="list-group-item">
+                        <p class="mb-2">@item.Korean</p>
+                        <p class="m-0">@item.Vietnamese</p>
+                    </li>
+                }
+            </ul>
+        </div>
+
+        <div class="card-body">
+            <button class="btn btn-sm btn-secondary"
+                    type="button"
+                    data-bs-toggle="collapse"
+                    data-bs-target="#moreExamples"
+                    aria-expanded="false"
+                    aria-controls="moreExamples">
+                Xem thêm / Ẩn bớt
+            </button>
+        </div>
+    }
+</div>

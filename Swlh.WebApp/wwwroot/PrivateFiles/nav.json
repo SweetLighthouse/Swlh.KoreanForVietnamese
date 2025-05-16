@@ -1,5 +1,9 @@
 [
   {
+    "text": "B\u1EA3ng ch\u1EEF c\u00E1i",
+    "href": "/Post/Details/6710646c-b537-44d5-7d38-08dd83be5636"
+  },
+  {
     "text": "Ti\u1EBFng H\u00E0n t\u1ED5ng h\u1EE3p",
     "href": "/Post/Details/6116c7c5-4e39-4a5e-1240-08dd88719a58",
     "dropdown": [
@@ -26,6 +30,43 @@
       {
         "text": "Quy\u1EC3n 6",
         "href": "/Post/Details/9b275bf2-e852-4be3-ad3f-08dd88b3ea96"
+      }
+    ]
+  },
+  {
+    "text": "T\u1EEB v\u1EF1ng theo ch\u1EE7 \u0111\u1EC1",
+    "dropdown": [
+      {
+        "text": "M\u00E0u s\u1EAFc",
+        "href": "/Post/Details/84b947c9-fc17-4294-0643-08dd8b97ca89"
+      },
+      {
+        "text": "Th\u1EDDi gian",
+        "href": "/Post/Details/71ef7753-02e5-482d-0644-08dd8b97ca89"
+      },
+      {
+        "text": "M\u00F3n \u0103n",
+        "href": "/Post/Details/47c124b9-2d47-4660-0642-08dd8b97ca89"
+      },
+      {
+        "text": "Du l\u1ECBch",
+        "href": "/Post/Details/e5e5db50-60b6-46ff-0641-08dd8b97ca89"
+      },
+      {
+        "text": "Th\u1EDDi ti\u1EBFt",
+        "href": "/Post/Details/ca82e082-f615-423c-0640-08dd8b97ca89"
+      },
+      {
+        "text": "Tr\u01B0\u1EDDng h\u1ECDc",
+        "href": "/Post/Details/2dc6a4d5-0d32-4aee-063f-08dd8b97ca89"
+      },
+      {
+        "text": "\u0110\u1ED3 v\u1EADt",
+        "href": "/Post/Details/c08bea54-fe07-4ce0-063e-08dd8b97ca89"
+      },
+      {
+        "text": "Ngh\u1EC1 nghi\u1EC7p",
+        "href": "/Post/Details/67655041-2077-4d83-063d-08dd8b97ca89"
       }
     ]
   }

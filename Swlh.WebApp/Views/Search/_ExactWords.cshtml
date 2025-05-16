@@ -1,0 +1,24 @@
+﻿@using Swlh.WebApp.Domain.Entities
+@model List<Word>
+
+<ul class="list-group list-group-flush">
+    @foreach (var word in Model)
+    {
+        <li class="list-group-item">
+            <p class="mb-2">
+                <span class="fw-bold">@word.WordVn</span>
+                @if (!string.IsNullOrWhiteSpace(word.Pronunciation))
+                {
+                    <span class="fst-italic small">(@word.Pronunciation)</span>
+                }
+                @if (!string.IsNullOrWhiteSpace(word.Type))
+                {
+                    <span class="fw-semibold">(@word.Type)</span>
+                }
+                <span>:</span>
+            </p>
+            <p class="text-body mb-2">@word.MeaningVn</p>
+            <p class="text-sm mb-2">@word.MeaningKr</p>
+        </li>
+    }
+</ul>

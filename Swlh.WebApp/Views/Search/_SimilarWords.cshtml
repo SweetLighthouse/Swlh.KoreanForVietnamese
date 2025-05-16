@@ -1,0 +1,68 @@
+﻿@using Swlh.WebApp.Controllers
+@using Swlh.WebApp.Domain.Entities
+@model List<Word>
+
+@{
+
+    var firsts = Model.Take(15).ToList();
+    var remains = Model.Skip(15).ToList();
+}
+
+<div class="card">
+    <div class="card-body">
+        <h5 class="card-title m-0">Từ vựng liên quan</h5>
+    </div>
+    <ul class="list-group list-group-flush">
+        @foreach (var item in firsts)
+        {
+            <li class="list-group-item">
+                <a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover"
+                asp-controller="@nameof(SearchController)[..^10]"
+                asp-action="@nameof(SearchController.Index)"
+                asp-route-query="@item.WordKr">
+                    @item.WordKr
+                </a>
+                @if (!string.IsNullOrWhiteSpace(item.Pronunciation))
+                {
+                    <span class="text-muted small">(@item.Pronunciation)</span>
+                }
+                <span class="fw-semibold">@item.WordVn</span>
+            </li>
+        }
+    </ul>
+
+    @if (remains.Count > 0)
+    {
+        <div class="collapse" id="moreWords">
+            <ul class="list-group list-group-flush">
+                @foreach (var item in remains)
+                {
+                    <li class="list-group-item">
+                        <a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover"
+                           asp-controller="@nameof(SearchController)[..^10]"
+                           asp-action="@nameof(SearchController.Index)"
+                           asp-route-query="@item.WordKr">
+                            @item.WordKr
+                        </a>
+                        @if (!string.IsNullOrWhiteSpace(item.Pronunciation))
+                        {
+                            <span class="text-muted small">(@item.Pronunciation)</span>
+                        }
+                        <span class="fw-semibold">@item.WordVn</span>
+                    </li>
+                }
+            </ul>
+        </div>
+
+        <div class="card-body">
+            <button class="btn btn-sm btn-secondary"
+                    type="button"
+                    data-bs-toggle="collapse"
+                    data-bs-target="#moreWords"
+                    aria-expanded="false"
+                    aria-controls="moreWords">
+                Xem thêm / Ẩn bớt
+            </button>
+        </div>
+    }
+</div>

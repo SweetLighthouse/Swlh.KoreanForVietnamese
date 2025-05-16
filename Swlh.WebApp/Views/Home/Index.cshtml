@@ -1,6 +1,10 @@
-﻿@inject IHttpClientFactory httpClientFactory
+﻿@using Microsoft.EntityFrameworkCore
+@using Swlh.WebApp.Controllers
+@inject IHttpClientFactory httpClientFactory
 @inject IWebHostEnvironment env
+
 @{
+    Layout = "_WithSideBar";
     ViewData["Title"] = "Trang chủ";
 
     var fileName = "_Homepage.json";
@@ -9,6 +13,8 @@
 }
 
 @Html.Raw(fileContent)
+
+
 
 
 

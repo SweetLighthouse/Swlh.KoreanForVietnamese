@@ -1,7 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.Identity.Client;
 using Swlh.Domain.Enums;
 using Swlh.WebApp.Domain.Entities;
+using Swlh.WebApp.Domain.Enums;
 
 namespace Swlh.WebApp.Context;
 
@@ -42,9 +42,9 @@ public class MainDbContext(DbContextOptions<MainDbContext> options) : DbContext(
         modelBuilder.Entity<CommentOnKeyword>()
             .HasKey(comment => comment.Id);
 
-        modelBuilder.Entity<CommentOnKeyword>()
-            .Property(comment => comment.IsDisabled)
-            .HasDefaultValue(false);
+        //modelBuilder.Entity<CommentOnKeyword>()
+        //    .Property(comment => comment.IsDisabled)
+        //    .HasDefaultValue(false);
 
 
         modelBuilder.Entity<CommentOnKeyword>()
@@ -87,8 +87,7 @@ public class MainDbContext(DbContextOptions<MainDbContext> options) : DbContext(
             .HasDefaultValue(0);
 
         modelBuilder.Entity<Example>()
-            .HasKey(example => new { example.Korean, example.Vietnamese });
-
+            .HasKey(example => example.Id);
 
         /// post thing
         modelBuilder.Entity<Post>()
@@ -186,8 +185,8 @@ public class MainDbContext(DbContextOptions<MainDbContext> options) : DbContext(
             .HasKey(report => report.Id);
 
         modelBuilder.Entity<Report>()
-            .Property(report => report.IsSolved)
-            .HasDefaultValue(false);
+            .Property(report => report.State)
+            .HasDefaultValue(ReportStatus.Pending);
 
         modelBuilder.Entity<Report>()
             .HasOne(report => report.Account)

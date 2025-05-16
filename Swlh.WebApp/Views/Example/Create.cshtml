@@ -1,0 +1,35 @@
+﻿@model Swlh.WebApp.Domain.Entities.Example
+
+@{
+    ViewData["Title"] = "Tạo ví dụ mới";
+}
+
+<h1>Tạo ví dụ mới</h1>
+
+<div class="row">
+    <div class="col-12 col-md-8">
+        <form asp-action="Create">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <div class="form-group mb-2">
+                <label asp-for="Korean" class="control-label fw-bold"></label>
+                <textarea rows="3" asp-for="Korean" class="form-control"></textarea>
+                <span asp-validation-for="Korean" class="text-danger"></span>
+            </div>
+            <div class="form-group mb-2">
+                <label asp-for="Vietnamese" class="control-label fw-bold"></label>
+                <textarea rows="3" asp-for="Vietnamese" class="form-control"></textarea>
+                <span asp-validation-for="Vietnamese" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <input type="submit" value="Tạo" class="btn btn-primary" />
+                <button type="button" class="btn btn-secondary" onclick="window.history.back()">Quay lại</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

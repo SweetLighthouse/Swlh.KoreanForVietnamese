@@ -1,0 +1,100 @@
+﻿@using Swlh.WebApp.Application.Services
+@using Swlh.WebApp.Controllers
+@using Swlh.WebApp.Domain.Enums
+@model IEnumerable<Swlh.WebApp.Domain.Entities.Report>
+
+@{
+    ViewData["Title"] = "Danh sách báo cáo";
+}
+
+<h1>Danh sách báo cáo tôi đã tạo</h1>
+
+<p>
+    <a class="btn btn-success" asp-action="@nameof(ReportController.Create)">Tạo báo cáo</a>
+</p>
+@if (Model.Count() == 0) {
+    <p>Bạn chưa tạo báo cáo nào cả.</p>
+    return;
+}
+<table class="table table-striped table-bordered">
+    <thead>
+        <tr>
+            <th>Đường dẫn</th>
+            <th>Mô tả</th>
+            <th>Trạng thái</th>
+            <th>Trả lời</th>
+            <th style="white-space: nowrap; width: 1%;"></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                @{
+                    var buttonClass = item.State switch
+                    {
+                        ReportStatus.Pending => "btn btn-sm btn-primary",
+                        ReportStatus.Resolved => "btn btn-sm btn-success",
+                        ReportStatus.Rejected => "btn btn-sm btn-danger",
+                        _ => "btn btn-sm btn-secondary"
+                    };
+                }
+                <td><a href="@item.Link" target="_blank">@item.Link</a></td>
+                <td>
+                    @Html.Raw(string.Join(" ", item.Description.Split(' ').Take(50)) + (item.Description.Split(' ').Length > 50 ? "..." : ""))
+                </td>
+
+                <td>
+                    <button disabled class="@buttonClass">@item.State.GetDisplayName()</button>
+                </td>
+
+                <td>
+                    @Html.Raw(string.Join(" ", item.Answer?.Split(' ').Take(50)) + (item.Description.Split(' ').Length > 50 ? "..." : ""))
+                </td>
+
+                <td>
+                    @if (item.State == ReportStatus.Pending)
+                    {
+                        <div class="d-block d-md-flex flex-md-nowrap gap-1">
+                            <a class="btn btn-sm btn-warning mb-1 mb-md-0"
+                               asp-action="@nameof(ReportController.Edit)"
+                               asp-route-id="@item.Id">Sửa</a>
+
+                            <button class="btn btn-sm btn-danger"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#deleteHandler-@item.Id">
+                                Xoá
+                            </button>
+                        </div>
+                    }
+
+                    <div class="modal fade" id="deleteHandler-@item.Id" tabindex="-1" role="dialog" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered">
+                            <div class="modal-content">
+                                <form method="post" asp-controller="@nameof(ReportController)[..^10]"
+                                      asp-action="@nameof(ReportController.Delete)">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title">Xoá báo cáo</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+                                    </div>
+
+                                    <div class="modal-body">
+                                        <p>Bạn có chắc muốn xoá báo cáo này không?</p>
+                                        <input type="hidden" name="Id" value="@item.Id" />
+                                    </div>
+
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                                        <button type="submit" class="btn btn-danger">Xoá</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                </td>
+
+            </tr>
+        }
+    </tbody>
+</table>

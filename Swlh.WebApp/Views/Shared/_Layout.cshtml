@@ -12,6 +12,18 @@
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/Swlh.WebApp.styles.css" asp-append-version="true" />
     <script src="~/lib/tinymce/tinymce.min.js"></script>
+
+    <style>
+        body {
+            background-attachment: fixed;
+            margin-top: 70px;
+            background-image: url('/img/background.jpg');
+            background-size: cover;
+            background-repeat: no-repeat;
+            background-position: center;
+        }
+    </style>
+
 </head>
 <body style="margin-top: 70px;">
     @if (TempData["Msg"] != null)
@@ -29,10 +41,27 @@
             z-index: 0 !important; /* Or just lower than TinyMCE */
         }
     </style>
+    <script>
+        function adjustBodyMargin() {
+            var headerHeight = document.querySelector('header').offsetHeight;
+            document.body.style.marginTop = headerHeight + 'px';
+        }
+
+        // Adjust margin when page loads and when the window is resized
+        window.onload = adjustBodyMargin;
+        window.onresize = adjustBodyMargin;
+    </script>
     <header class="position-fixed top-0 start-0 w-100 " style="z-index: 5;">
         <nav class="navbar p-0 navbar-fixed-top navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container">
-                <a class="navbar-brand d-block d-sm-none d-md-block" asp-area="" asp-controller="Home" asp-action="Index">Swlh</a>
+            <div class="container-fluid gap-2 mx-lg-3 my-1 my-sm-0">
+                <a class="navbar-brand d-block d-sm-none d-md-block" asp-area="" asp-controller="Home" asp-action="Index">당</a>
+                <form asp-controller="@nameof(SearchController)[..^10]"
+                      asp-action="@nameof(SearchController.Index)"
+                      method="get"
+                      class="d-flex d-sm-none gap-2 flex-shrink-0 flex-grow-1 d-block d-sm-none">
+                    <input id="search-on-mobile" class="form-control" type="text" name="query" value="@Context.Request.Query["query"]" placeholder="Bấm / để tra cứu từ vựng" />
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-search"></i></button>
+                </form>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
                         aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
@@ -41,37 +70,58 @@
 
                     <form asp-controller="@nameof(SearchController)[..^10]"
                           asp-action="@nameof(SearchController.Index)"
-                          method="get">
-                        <input id="search" class="form-control my-2" type="text" name="query" value="@Context.Request.Query["query"]" placeholder="Bấm / để tra cứu từ vựng" />
+                          method="get"
+                          class="d-none d-sm-flex gap-1 flex-shrink-0">
+                        <input id="search-on-desktop" class="form-control" type="text" name="query" value="@Context.Request.Query["query"]" placeholder="Bấm / để tra cứu từ vựng" />
+                        <button type="submit" class="btn btn-primary"><i class="bi bi-search"></i></button>
                     </form>
 
                     <script>
-                        document.addEventListener('keydown', function (e) {
-                            const active = document.activeElement;
-                            const isTyping = active.tagName === 'INPUT' ||
-                                             active.tagName === 'TEXTAREA' ||
-                                             active.isContentEditable ||
-                                             active.closest('.jsoneditor') !== null;
+                        const inputMobile = document.getElementById('search-on-mobile');
+                        const inputDesktop = document.getElementById('search-on-desktop');
 
-                            if (e.key === '/' && !isTyping) {
-                                e.preventDefault();
-                                const input = document.getElementById('search');
-                                if (input) {
-                                    input.focus();
-                                    // Move cursor to end
-                                    const value = input.value;
-                                    input.value = '';
-                                    input.value = value;
-                                }
-                            }
+                        function syncInputs(source, target) {
+                            source.addEventListener('input', () => {
+                                target.value = source.value;
+                            });
+                        }
+
+                        // Ensure both inputs stay in sync
+                        if (inputMobile && inputDesktop) {
+                            syncInputs(inputMobile, inputDesktop);
+                            syncInputs(inputDesktop, inputMobile);
+                        }
+
+                        document.addEventListener('keydown', function (e) {
+                            if (e.key !== '/') return;
+
+                            const active = document.activeElement;
+                            const isTyping =
+                                active.tagName === 'INPUT' ||
+                                active.tagName === 'TEXTAREA' ||
+                                active.isContentEditable ||
+                                active.closest('.jsoneditor');
+
+                            if (isTyping) return;
+
+                            e.preventDefault();
+
+                            const input = window.matchMedia("(max-width: 575.98px)").matches
+                                ? inputMobile
+                                : inputDesktop;
+
+                            if (!input) return;
+
+                            input.focus();
+                            // Move cursor to end
+                            input.value = input.value; // triggers cursor to move to end
                         });
                     </script>
 
 
-
-                    <ul class="navbar-nav flex-grow-1">
+                    <ul class="navbar-nav flex-wrap flex-grow-1">
                         <li class="nav-item">
-                            <a class="btn btn-light nav-link text-dark py-3" asp-controller="@nameof(PostController)[..^10]" asp-action="@nameof(PostController.Index)">Bài viết</a>
+                            <a class="text-start btn btn-light nav-link text-dark py-3 px-2 px-md-2" asp-controller="@nameof(PostController)[..^10]" asp-action="@nameof(PostController.Index)">Bài viết</a>
                         </li>
 
                         <partial name="_CategoryList" />
@@ -80,16 +130,41 @@
                         {
                             <li class="nav-item">
 
-                                <div class="btn-group">
-                                    <button type="button" class="btn btn-light nav-link text-dark py-3 dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                                <div class="d-flex flex-wrap btn-group w-100 w-sm-auto">
+                                    <button type="button" class="d-flex flex-wrap justify-content-between align-items-center gap-sm-2 ps-2 pe-3 pe-md-2 btn btn-light nav-link text-dark py-3 dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
                                         Quản lý
                                     </button>
-                                    <ul class="m-0 dropdown-menu">
+                                    <ul class="m-0 dropdown-menu w-100 w-sm-auto">
+
+                                        <li class="nav-item">
+                                            <a class="dropdown-item"
+                                               asp-controller="@nameof(HandleReportController)[..^10]"
+                                               asp-action="@nameof(HandleReportController.Index)">
+                                                Xử lý báo cáo
+                                            </a>
+                                        </li>
+
                                         <li class="nav-item">
                                             <a class="dropdown-item"
                                                asp-controller="@nameof(AccountController)[..^10]"
                                                asp-action="@nameof(AccountController.Index)">
                                                 Tài khoản người dùng
+                                            </a>
+                                        </li>
+
+                                        <li class="nav-item">
+                                            <a class="dropdown-item"
+                                               asp-controller="@nameof(WordController)[..^10]"
+                                               asp-action="@nameof(WordController.Index)">
+                                                Từ vựng
+                                            </a>
+                                        </li>
+
+                                        <li class="nav-item">
+                                            <a class="dropdown-item"
+                                               asp-controller="@nameof(ExampleController)[..^10]"
+                                               asp-action="@nameof(ExampleController.Index)">
+                                                Ví dụ
                                             </a>
                                         </li>
 
@@ -159,7 +234,7 @@
 
                     @if (username == null)
                     {
-                        <a class="btn btn-light nav-link text-dark py-3 px-2"
+                        <a class="text-start btn btn-light nav-link text-dark py-3 px-2 px-md-2"
                            asp-controller="Authentication"
                            asp-action="Login"
                            asp-route-backurl="@backUrl"
@@ -169,11 +244,11 @@
                     }
                     else
                     {
-                        <div class="btn-group">
-                            <button type="button" class="btn btn-light nav-link text-dark py-3 px-2 dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                        <div class="btn-group w-100 w-sm-auto">
+                            <button type="button" class="d-flex justify-content-between align-items-center gap-sm-2 btn btn-light nav-link text-dark py-3 ps-2 pe-3 pe-md-2 dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
                                 Xin chào, @username
                             </button>
-                            <ul class="m-0 dropdown-menu dropdown-menu-end">
+                            <ul class="w-100 w-sm-auto m-0 dropdown-menu dropdown-menu-end">
                                 <li class="nav-item">
                                     <a class="dropdown-item"
                                        asp-controller="@nameof(AuthenticationController)[..^10]"
@@ -203,6 +278,15 @@
 
                                 <li class="nav-item">
                                     <a class="dropdown-item"
+                                       asp-controller="@nameof(ReportController)[..^10]"
+                                       asp-action="@nameof(ReportController.Index)"
+                                       asp-route-backurl="@backUrl">
+                                        Báo cáo
+                                    </a>
+                                </li>
+
+                                <li class="nav-item">
+                                    <a class="dropdown-item"
                                        asp-controller="@nameof(AuthenticationController)[..^10]"
                                        asp-action="@nameof(AuthenticationController.Logout)"
                                        asp-route-backurl="@backUrl">
@@ -218,13 +302,16 @@
     </header>
     <div class="container">
         <main role="main" class="pb-3">
-            @RenderBody()
+            <div class="card p-2">
+                @RenderBody()
+            </div>
+            
         </main>
     </div>
 
-    <footer class="border-top footer text-muted">
+    <footer class="border-top footer text-muted bg-white">
         <div class="container">
-            &copy; 2025 - Swlh.WebApp
+            &copy; 2025 - Swlh
             <partial name="_FooterList" />
             @* <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a> *@
         </div>

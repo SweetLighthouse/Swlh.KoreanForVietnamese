@@ -7,7 +7,7 @@
 }
 
 
-<div class="d-flex justify-content-center align-items-center min-vh-100 bg-white bg-opacity-75 p-4 rounded shadow">
+<div class="d-flex justify-content-center align-items-center min-vh-100 p-4 rounded shadow">
     <div class="card shadow p-4 border-0" style="width: 100%; max-width: 400px;">
         <h3 class="mb-4 text-center">Đăng nhập</h3>
         <form asp-action="Login">
@@ -39,6 +39,11 @@
                asp-route-backurl="@Context.Request.Query["backurl"]">
                 Đăng ký
             </a>
+        </div>
+
+        <div>
+            <a asp-controller="@nameof(AuthenticationController)[..^10]"
+               asp-action="@nameof(AuthenticationController.ForgotPassword)">Quên mật khẩu?</a>
         </div>
 
         <div>

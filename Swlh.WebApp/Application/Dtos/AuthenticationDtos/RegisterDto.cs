@@ -17,7 +17,7 @@ public class RegisterDto
     [Required(ErrorMessage = "Mật khẩu không được để trống.")]
     [MaxLength(60, ErrorMessage = "Mật khẩu không được dài hơn 60 ký tự.")]
     [MinLength(3, ErrorMessage = "Mật khẩu không được ngắn hơn 3 ký tự.")]
-    [RegularExpression(@"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[+=\-~`[\]{}\\|""':;.,<>/?()_!@#$%^&*]).+$", ErrorMessage = "Mật khẩu yếu. Cần ít nhất 1 chữ hoa, 1 chữ thường, 1 số và 1 ký tự đặc biệt.")]
+    [RegularExpression(@"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[+=\-~`[\]{}\\|""':;.,<>/?()_!@#$%^&*])\S+$", ErrorMessage = "Mật khẩu yếu. Cần ít nhất 1 chữ hoa, 1 chữ thường, 1 số và 1 ký tự đặc biệt, không được có dấu cách 895.")]
 
     public string Password { get; set; } = null!;
 

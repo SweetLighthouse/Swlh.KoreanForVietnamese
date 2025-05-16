@@ -17,7 +17,7 @@ tinymce.init({
     extended_valid_elements: 'iframe[src|srcdoc|style|width|height|scrolling|frameborder|allowfullscreen]',
     valid_children: '+body[iframe]',
 
-    plugins: 'image media link fullscreen table lists',
+    plugins: 'image media link fullscreen table lists code',
     //toolbar: 'paragraph | strikethrough | bullist numlist outdent indent | media link image table fullscreen | heading',
     toolbar: 'undo redo | styles | bold italic underline strikethrough forecolor backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image media table codesample | blockquote hr removeformat | fullscreen preview code',
     file_picker_types: 'image media file',

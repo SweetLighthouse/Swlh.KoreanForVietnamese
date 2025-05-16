@@ -1,14 +1,18 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.EntityFrameworkCore;
 using Swlh.Domain.Enums;
 using Swlh.WebApp.Application.Dtos.AuthenticationDtos;
 using Swlh.WebApp.Context;
 using Swlh.WebApp.Domain.Entities;
+using System.Net.Mail;
 
 namespace Swlh.WebApp.Controllers;
 
 public class AuthenticationController(MainDbContext context) : Controller
 {
+    public IActionResult Test() => View("ResetPassword");
+
     public IActionResult Register() => View();
 
     [HttpPost]
@@ -208,5 +212,53 @@ public class AuthenticationController(MainDbContext context) : Controller
         return string.IsNullOrEmpty(backurl)
             ? RedirectToAction("Index", "Home")
             : Redirect(backurl);
+    }
+
+
+    [HttpGet]
+    public IActionResult ForgotPassword() => View();
+
+
+    [HttpPost]
+    public async Task<IActionResult> ForgotPasswordHandler([FromForm] ForgotPasswordDto? dto) 
+    {
+        if(dto == null || !ModelState.IsValid) return View(dto);
+        // createa token and send email
+        var account = await context.Accounts
+            .FirstOrDefaultAsync(acc =>
+                acc.Username == dto.UsernameOrEmail ||
+                acc.Email == dto.UsernameOrEmail
+            );
+        
+        var theEmail = account?.Email;
+        if(theEmail != null)
+        {
+            try
+            {
+                var fromEmail = "buihaidangvn@gmail.com";
+                var fromPassword = "fuwo yzyy nuyx wmtv";
+
+                var message = new MailMessage();
+                message.From = new MailAddress(fromEmail);
+                message.Subject = "Khôi phục mật khẩu tài khoản";
+                message.To.Add(new MailAddress(theEmail));
+                message.Body = $"<h1>Khôi phục mật khẩu tài khoản</h1><p>Vui lòng nhấn vào <a href='https://localhost:5001/Authentication/ResetPassword?token={Guid.NewGuid()}'>đây</a> để khôi phục mật khẩu tài khoản của bạn.</p>";
+                message.IsBodyHtml = true;
+                message.Priority = MailPriority.High;
+                using var smtp = new SmtpClient("smtp.gmail.com")
+                {
+                    Port = 587,
+                    Credentials = new System.Net.NetworkCredential(fromEmail, fromPassword),
+                    EnableSsl = true,
+                    UseDefaultCredentials = true
+                };
+                smtp.Send(message);
+            }
+            catch(Exception e)
+            {
+                Console.WriteLine(e);
+            }
+        }
+        return View("EmailSent");
     }
 }

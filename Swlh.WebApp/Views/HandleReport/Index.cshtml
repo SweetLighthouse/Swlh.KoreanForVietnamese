@@ -1,0 +1,61 @@
+﻿@using Swlh.WebApp.Application.Services
+@using Swlh.WebApp.Controllers
+@using Swlh.WebApp.Domain.Enums
+@model IEnumerable<Swlh.WebApp.Domain.Entities.Report>
+
+@{
+    ViewData["Title"] = "Xử lý báo cáo";
+}
+
+<h1>Xử lý báo cáo người dùng</h1>
+
+<table class="table table-stripped table-bordered">
+    <thead>
+        <tr>
+            <th>Username</th>
+            <th>Đường dẫn</th>
+            <th>Mô tả</th>
+            <th>Trạng thái</th>
+            <th>Câu trả lời</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>
+                    <a asp-controller="@nameof(AccountController)[..^10]"
+                       asp-action="@nameof(AccountController.Details)"
+                       asp-route-id="@item.Account.Id">@item.Account.Username</a>
+                </td>
+                <td><a href="@item.Link" target="_blank">@item.Link</a></td>
+                <td>@Html.Raw(string.Join(" ", item.Description.Split(' ').Take(50)) + (item.Description.Split(' ').Length > 50 ? "..." : ""))</td>
+                <td>
+                    @{
+                        var buttonClass = item.State switch
+                        {
+                            ReportStatus.Pending => "btn btn-sm btn-primary",
+                            ReportStatus.Resolved => "btn btn-sm btn-success",
+                            ReportStatus.Rejected => "btn btn-sm btn-danger",
+                            _ => "btn btn-sm btn-secondary"
+                        };
+                    }
+                    <button disabled class="@buttonClass">@item.State.GetDisplayName()</button>
+                </td>
+                <td>
+                    @if (item.State != ReportStatus.Pending)
+                    {
+                        @Html.Raw(string.Join(" ", item.Answer?.Split(' ').Take(50)) + (item.Description.Split(' ').Length > 50 ? "..." : ""))
+                    }
+                    else
+                    {
+                        <a class="btn btn-sm btn-primary"
+                           asp-controller="@nameof(HandleReportController)[..^10]"
+                           asp-action="@nameof(HandleReportController.Handle)"
+                           asp-route-id="@item.Id">Xử lý</a>
+                    }
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

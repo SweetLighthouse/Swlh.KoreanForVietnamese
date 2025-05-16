@@ -12,6 +12,7 @@ namespace Swlh.WebApp.Domain.Entities;
     [MaxLength(1023)] public string Description { get; set; } = string.Empty;
     public byte[] Thumbnail { get; set; } = [];
     [MaxLength(65535)] public string Body { get; set; } = string.Empty;
+    public int AccessedCount { get; set; }
     public bool IsDisabled { get; set; }
 
     public List<Tag> Tags { get; set; } = [];

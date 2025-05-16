@@ -2,6 +2,7 @@
 
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.WebUtilities;
+using Swlh.Domain.Enums;
 using Swlh.WebApp.Application.Services;
 using Swlh.WebApp.Context;
 using Swlh.WebApp.Domain.Entities;
@@ -85,7 +86,8 @@ public class CommentOnKeywordController(MainDbContext context) : Controller
     {
         var comment = await context.CommentOnKeywords.FindAsync(commentId);
         if (comment == null) return "Không tìm thấy bình luận.";
-        if (comment.AccountId != AccountId) return "Bạn không có quyền xoá bình luận này.";
+        var account = await context.Accounts.FindAsync(AccountId);
+        if (comment.AccountId != AccountId && account?.Role != Role.Admin) return "Bạn không có quyền xoá bình luận này.";
         context.CommentOnKeywords.Remove(comment);
         await context.SaveChangesAsync();
         return "Xoá bình luận thành công.";

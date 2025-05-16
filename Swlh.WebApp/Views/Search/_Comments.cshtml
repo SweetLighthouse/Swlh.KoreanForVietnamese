@@ -1,0 +1,161 @@
+﻿@* @model string *@
+
+@* <div> *@
+@*     <h3 class="mb-3">Bình luận góp ý</h3> *@
+@*     <script src="~/js/handle_react.js" defer></script> *@
+@*     <!-- Comment Form --> *@
+@*     @if (id != Guid.Empty) *@
+@*     { *@
+@*         <form method="post" id="myForm" *@
+@*               asp-controller="@Model" *@
+@*               asp-action="Handle" *@
+@*               class="d-flex justify-content-between gap-2 mb-3"> *@
+@*             <textarea id="myInput" name="Content" class="form-control" placeholder="Nhập bình luận..."></textarea> *@
+@*             <button type="submit" name="type" value="add" class="btn btn-primary align-self-start">Gửi</button> *@
+@*         </form> *@
+@*     } *@
+@*     else *@
+@*     { *@
+@*         <p> *@
+@*             <a class="link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" *@
+@*                asp-controller="Authentication" *@
+@*                asp-action="Login" *@
+@*                asp-route-backurl="@(Context.Request.Path + Context.Request.QueryString)">Đăng nhập</a> *@
+@*             để góp ý và phát triển cộng đồng! *@
+@*         </p> *@
+@*     } *@
+
+
+@*     <!-- Comment List --> *@
+@*     <div> *@
+@*         @{ *@
+@*             var comments = context.CommentOnKeywords *@
+@*             .Where(comment => comment.Key == query) *@
+@*             .OrderByDescending(comments => comments.CreatedAt) *@
+@*             .Include(a => a.Account) *@
+@*             .Include(a => a.Reactions); *@
+@*         } *@
+@*         @foreach (var comment in comments) *@
+@*         { *@
+@*             <div class="mb-3 p-3 border rounded bg-light position-relative"> *@
+
+@*                 <!-- Options dropdown --> *@
+@*                 <div class="dropdown position-absolute top-0 end-0 m-2"> *@
+@*                     <button class="btn btn-sm btn-light" type="button" data-bs-toggle="dropdown" aria-expanded="false"> *@
+@*                         <i>⋯</i> *@
+@*                     </button> *@
+@*                     <ul class="dropdown-menu dropdown-menu-end"> *@
+
+@*                         @if (comment.AccountId == id) *@
+@*                         { *@
+@*                             <li> *@
+@*                                 <button class="dropdown-item" data-bs-toggle="modal" data-bs-target="#editComment-@comment.Id">Sửa</button> *@
+@*                             </li> *@
+@*                         } *@
+
+@*                         @if (comment.AccountId == id || isAdmin) *@
+@*                         { *@
+@*                             <li> *@
+@*                                 <button class="dropdown-item text-danger" data-bs-toggle="modal" data-bs-target="#deleteComment-@comment.Id">Xóa</button> *@
+@*                             </li> *@
+@*                         } *@
+@*                     </ul> *@
+
+@*                     <div class="modal fade" id="editComment-@comment.Id" tabindex="-1" role="dialog" aria-hidden="true"> *@
+@*                         <div class="modal-dialog modal-dialog-centered"> *@
+@*                             <div class="modal-content"> *@
+@*                                 <form method="post" asp-controller="@nameof(CommentOnKeywordController)[..^10]" *@
+@*                                       asp-action="@nameof(CommentOnKeywordController.Handle)"> *@
+@*                                     <div class="modal-header"> *@
+@*                                         <h5 class="modal-title">Chỉnh sửa bình luận</h5> *@
+@*                                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button> *@
+@*                                     </div> *@
+
+@*                                     <div class="modal-body"> *@
+@*                                         <div class="mb-3"> *@
+@*                                             <label for="commentTextarea-@comment.Id" class="form-label">Nội dung</label> *@
+@*                                             <textarea class="form-control" id="commentTextarea-@comment.Id" name="content" rows="4">@comment.Content</textarea> *@
+@*                                         </div> *@
+@*                                         <input type="hidden" name="commentId" value="@comment.Id" /> *@
+@*                                     </div> *@
+
+@*                                     <div class="modal-footer"> *@
+@*                                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button> *@
+@*                                         <button type="submit" name="type" value="edit" class="btn btn-primary">Gửi</button> *@
+@*                                     </div> *@
+@*                                 </form> *@
+@*                             </div> *@
+@*                         </div> *@
+@*                     </div> *@
+
+@*                     <!-- Delete Confirmation Modal --> *@
+@*                     <div class="modal fade" id="deleteComment-@comment.Id" tabindex="-1" role="dialog" aria-hidden="true"> *@
+@*                         <div class="modal-dialog modal-dialog-centered"> *@
+@*                             <div class="modal-content"> *@
+@*                                 <form method="post" asp-controller="@nameof(CommentOnKeywordController)[..^10]" *@
+@*                                       asp-action="@nameof(CommentOnKeywordController.Handle)"> *@
+@*                                     <div class="modal-header"> *@
+@*                                         <h5 class="modal-title">Xác nhận xóa</h5> *@
+@*                                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button> *@
+@*                                     </div> *@
+
+@*                                     <div class="modal-body"> *@
+@*                                         <p>Bạn có chắc muốn xóa bình luận này không?</p> *@
+@*                                         <input type="hidden" name="commentId" value="@comment.Id" /> *@
+@*                                         <input type="hidden" name="type" value="delete" /> *@
+@*                                     </div> *@
+
+@*                                     <div class="modal-footer"> *@
+@*                                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button> *@
+@*                                         <button type="submit" class="btn btn-danger">Xóa</button> *@
+@*                                     </div> *@
+@*                                 </form> *@
+@*                             </div> *@
+@*                         </div> *@
+@*                     </div> *@
+
+
+@*                 </div> *@
+
+@*                 <!-- Comment Content --> *@
+@*                 <p class="mb-2">@comment.Content</p> *@
+
+@*                 <!-- Reactions + Author/Time --> *@
+@*                 <div class="d-flex justify-content-between align-items-center"> *@
+@*                     <div class="me-2"> *@
+
+@*                         <button class="btn btn-sm btn-outline-success" onclick="handleReact(this.parentElement, `/api/CommentOnKeywordReaction`, `@comment.Id`, true)"> *@
+@*                             @if (comment.Reactions.Any(r => r.IsLike && r.AccountId == id)) *@
+@*                             { *@
+@*                                 <i class="bi bi-hand-thumbs-up-fill"></i> *@
+@*                             } *@
+@*                             else *@
+@*                             { *@
+@*                                 <i class="bi bi-hand-thumbs-up"></i> *@
+@*                             } *@
+@*                             <span class="ms-1">@comment.Reactions.Where(r => r.IsLike).Count()</span> *@
+@*                         </button> *@
+
+@*                         <button class="btn btn-sm btn-outline-danger" onclick="handleReact(this.parentElement, `/api/CommentOnKeywordReaction`, `@comment.Id`, false)"> *@
+@*                             @if (comment.Reactions.Any(r => !r.IsLike && r.AccountId == id)) *@
+@*                             { *@
+@*                                 <i class="bi bi-hand-thumbs-down-fill"></i> *@
+@*                             } *@
+@*                             else *@
+@*                             { *@
+@*                                 <i class="bi bi-hand-thumbs-down"></i> *@
+@*                             } *@
+@*                             <span class="ms-1">@comment.Reactions.Where(r => !r.IsLike).Count()</span> *@
+@*                         </button> *@
+@*                     </div> *@
+@*                     <div class="text-end small text-muted"> *@
+@*                         <strong>@comment.Account.Username</strong> *@
+@*                         <span>@comment.CreatedAt.ToLocalTime().ToString("g")</span> *@
+@*                     </div> *@
+@*                 </div> *@
+
+@*             </div> *@
+
+@*         } *@
+@*     </div> *@
+@* </div> *@

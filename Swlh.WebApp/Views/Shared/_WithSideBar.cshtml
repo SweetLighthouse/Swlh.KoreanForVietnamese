@@ -1,0 +1,451 @@
+﻿@using Swlh.Domain.Enums
+@using Swlh.WebApp.Context
+@using Swlh.WebApp.Controllers
+@inject MainDbContext context
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Swlh</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap-icons.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/Swlh.WebApp.styles.css" asp-append-version="true" />
+    <script src="~/lib/tinymce/tinymce.min.js"></script>
+
+    <style>
+        body {
+            background-attachment: fixed;
+            margin-top: 70px;
+            background-image: url('/img/background.jpg');
+            background-size: cover;
+            background-repeat: no-repeat;
+            background-position: center;            
+        }
+    </style>
+
+</head>
+<body>
+    @if (TempData["Msg"] != null)
+    {
+        <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 9999;">
+            <div class="alert alert-success alert-dismissible fade show shadow-sm small mb-0" role="alert">
+                @TempData["Msg"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        </div>
+    }
+    <style>
+        body.tox-fullscreen header {
+            display: none;
+            z-index: 0 !important; /* Or just lower than TinyMCE */
+        }
+    </style>
+    <script>
+        function adjustBodyMargin() {
+        var headerHeight = document.querySelector('header').offsetHeight;
+        document.body.style.marginTop = headerHeight + 'px';
+        }
+
+        // Adjust margin when page loads and when the window is resized
+        window.onload = adjustBodyMargin;
+        window.onresize = adjustBodyMargin;
+    </script>
+    <header class="position-fixed top-0 start-0 w-100 " style="z-index: 5;">
+        <nav class="navbar p-0 navbar-fixed-top navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
+            <div class="container-fluid gap-2 mx-lg-3 my-1 my-sm-0">
+                <a class="navbar-brand d-block d-sm-none d-md-block" asp-area="" asp-controller="Home" asp-action="Index">당</a>
+                <form asp-controller="@nameof(SearchController)[..^10]"
+                      asp-action="@nameof(SearchController.Index)"
+                      method="get"
+                      class="d-flex d-sm-none gap-2 flex-shrink-0 flex-grow-1 d-block d-sm-none">
+                    <input id="search-on-mobile" class="form-control" type="text" name="query" value="@Context.Request.Query["query"]" placeholder="Bấm / để tra cứu từ vựng" />
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-search"></i></button>
+                </form>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
+                        aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
+
+                    <form asp-controller="@nameof(SearchController)[..^10]"
+                          asp-action="@nameof(SearchController.Index)"
+                          method="get"
+                          class="d-none d-sm-flex gap-1 flex-shrink-0">
+                        <input id="search-on-desktop" class="form-control" type="text" name="query" value="@Context.Request.Query["query"]" placeholder="Bấm / để tra cứu từ vựng" />
+                        <button type="submit" class="btn btn-primary"><i class="bi bi-search"></i></button>
+                    </form>
+
+                    <script>
+                        const inputMobile = document.getElementById('search-on-mobile');
+                        const inputDesktop = document.getElementById('search-on-desktop');
+
+                        function syncInputs(source, target) {
+                        source.addEventListener('input', () => {
+                        target.value = source.value;
+                        });
+                        }
+
+                        // Ensure both inputs stay in sync
+                        if (inputMobile && inputDesktop) {
+                        syncInputs(inputMobile, inputDesktop);
+                        syncInputs(inputDesktop, inputMobile);
+                        }
+
+                        document.addEventListener('keydown', function (e) {
+                        if (e.key !== '/') return;
+
+                        const active = document.activeElement;
+                        const isTyping =
+                        active.tagName === 'INPUT' ||
+                        active.tagName === 'TEXTAREA' ||
+                        active.isContentEditable ||
+                        active.closest('.jsoneditor');
+
+                        if (isTyping) return;
+
+                        e.preventDefault();
+
+                        const input = window.matchMedia("(max-width: 575.98px)").matches
+                        ? inputMobile
+                        : inputDesktop;
+
+                        if (!input) return;
+
+                        input.focus();
+                        // Move cursor to end
+                        input.value = input.value; // triggers cursor to move to end
+                        });
+                    </script>
+
+
+                    <ul class="navbar-nav flex-wrap flex-grow-1">
+                        <li class="nav-item">
+                            <a class="text-start btn btn-light nav-link text-dark py-3 px-2 px-md-2" asp-controller="@nameof(PostController)[..^10]" asp-action="@nameof(PostController.Index)">Bài viết</a>
+                        </li>
+
+                        <partial name="_CategoryList" />
+
+                        @if (Enum.TryParse(Context.Session.GetString("Role"), out Role role) && role == Role.Admin)
+                        {
+                            <li class="nav-item">
+
+                                <div class="d-flex flex-wrap btn-group w-100 w-sm-auto">
+                                    <button type="button" class="d-flex flex-wrap justify-content-between align-items-center gap-sm-2 ps-2 pe-3 pe-md-2 btn btn-light nav-link text-dark py-3 dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                                        Quản lý
+                                    </button>
+                                    <ul class="m-0 dropdown-menu w-100 w-sm-auto">
+
+                                        <li class="nav-item">
+                                            <a class="dropdown-item"
+                                               asp-controller="@nameof(HandleReportController)[..^10]"
+                                               asp-action="@nameof(HandleReportController.Index)">
+                                                Xử lý báo cáo
+                                            </a>
+                                        </li>
+
+                                        <li class="nav-item">
+                                            <a class="dropdown-item"
+                                               asp-controller="@nameof(AccountController)[..^10]"
+                                               asp-action="@nameof(AccountController.Index)">
+                                                Tài khoản người dùng
+                                            </a>
+                                        </li>
+
+                                        <li class="nav-item">
+                                            <a class="dropdown-item"
+                                               asp-controller="@nameof(WordController)[..^10]"
+                                               asp-action="@nameof(WordController.Index)">
+                                                Từ vựng
+                                            </a>
+                                        </li>
+
+                                        <li class="nav-item">
+                                            <a class="dropdown-item"
+                                               asp-controller="@nameof(ExampleController)[..^10]"
+                                               asp-action="@nameof(ExampleController.Index)">
+                                                Ví dụ
+                                            </a>
+                                        </li>
+
+                                        <li class="nav-item">
+                                            <a class="dropdown-item"
+                                               asp-controller="@nameof(PostController)[..^10]"
+                                               asp-action="@nameof(PostController.Index)">
+                                                Bài viết
+                                            </a>
+                                        </li>
+
+                                        <li class="nav-item">
+                                            <a class="dropdown-item"
+                                               asp-controller="@nameof(CustomFilesController)[..^10]"
+                                               asp-action="@nameof(CustomFilesController.Index)">
+                                                File
+                                            </a>
+                                        </li>
+
+                                        <li class="nav-item">
+                                            <a class="dropdown-item"
+                                               asp-controller="@nameof(AdminController)[..^10]"
+                                               asp-action="@nameof(AdminController.NavigationManager)">
+                                                Thanh điều hướng
+                                            </a>
+                                        </li>
+
+                                        <li class="nav-item">
+                                            <a class="dropdown-item"
+                                               asp-controller="@nameof(AdminController)[..^10]"
+                                               asp-action="@nameof(AdminController.FooterManager)">
+                                                Footer
+                                            </a>
+                                        </li>
+
+                                        <li class="nav-item">
+                                            <a class="dropdown-item"
+                                               asp-controller="@nameof(AdminController)[..^10]"
+                                               asp-action="@nameof(AdminController.HomepageManager)">
+                                                Trang chủ
+                                            </a>
+                                        </li>
+
+                                    </ul>
+                                </div>
+                            </li>
+                        }
+                    </ul>
+
+                    @{
+                        string? username = Context.Session.GetString("Username");
+                        var backUrl = Context.Request.Path + Context.Request.QueryString;
+                        // var fullUrl = Context.Request.Path;
+                        // Uri uri = new Uri(fullUrl);
+                        // var backUrl = uri.PathAndQuery;
+                        // Extracts the relative path + query string
+                    }
+
+                    <style>
+                        /* Show dropdown on hover */
+                        .dropdown:hover .dropdown-menu,
+                        .dropdown-menu:hover {
+                            display: block;
+                            margin-top: 0; /* optional: remove dropdown animation delay */
+                        }
+                    </style>
+
+                    @if (username == null)
+                    {
+                        <a class="text-start btn btn-light nav-link text-dark py-3 px-2 px-md-2"
+                           asp-controller="Authentication"
+                           asp-action="Login"
+                           asp-route-backurl="@backUrl"
+                           role="button">
+                            Đăng nhập
+                        </a>
+                    }
+                    else
+                    {
+                        <div class="btn-group w-100 w-sm-auto">
+                            <button type="button" class="d-flex justify-content-between align-items-center gap-sm-2 btn btn-light nav-link text-dark py-3 ps-2 pe-3 pe-md-2 dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                                Xin chào, @username
+                            </button>
+                            <ul class="w-100 w-sm-auto m-0 dropdown-menu dropdown-menu-end">
+                                <li class="nav-item">
+                                    <a class="dropdown-item"
+                                       asp-controller="@nameof(AuthenticationController)[..^10]"
+                                       asp-action="@nameof(AuthenticationController.MyAccount)"
+                                       asp-route-backurl="@backUrl">
+                                        Tài khoản của tôi
+                                    </a>
+                                </li>
+
+                                <li class="nav-item">
+                                    <a class="dropdown-item"
+                                       asp-controller="@nameof(AuthenticationController)[..^10]"
+                                       asp-action="@nameof(AuthenticationController.UpdateAccount)"
+                                       asp-route-backurl="@backUrl">
+                                        Sửa thông tin tài khoản
+                                    </a>
+                                </li>
+
+                                <li class="nav-item">
+                                    <a class="dropdown-item"
+                                       asp-controller="@nameof(AuthenticationController)[..^10]"
+                                       asp-action="@nameof(AuthenticationController.ChangePassword)"
+                                       asp-route-backurl="@backUrl">
+                                        Đổi mật khẩu
+                                    </a>
+                                </li>
+
+                                <li class="nav-item">
+                                    <a class="dropdown-item"
+                                       asp-controller="@nameof(ReportController)[..^10]"
+                                       asp-action="@nameof(ReportController.Index)"
+                                       asp-route-backurl="@backUrl">
+                                        Báo cáo
+                                    </a>
+                                </li>
+
+                                <li class="nav-item">
+                                    <a class="dropdown-item"
+                                       asp-controller="@nameof(AuthenticationController)[..^10]"
+                                       asp-action="@nameof(AuthenticationController.Logout)"
+                                       asp-route-backurl="@backUrl">
+                                        Đăng xuất
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    }
+                </div>
+            </div>
+        </nav>
+    </header>
+    <div class="container">
+        <main role="main" class="pb-3">
+
+            <div class="row g-2">
+                <div class="col-12 col-lg-9">
+
+                    <div class="card p-3" style="background-color: white;">
+                        @RenderBody()
+                    </div>
+
+
+                </div>
+
+                <div class="col-12 col-lg-3 g-2">
+
+                    <div class="card mb-2">
+                        <div class="card-body">
+                            <h5 class="card-title m-0">Bài viết mới đăng</h5>
+                        </div>
+                        <ul class="list-group list-group-flush">
+                            @foreach (var item in context.Posts.OrderByDescending(p => p.CreatedAt).Take(3))
+                            {
+                                string imageDataURL = (item.Thumbnail != null && item.Thumbnail.Length > 0)
+                                ? $"data:image/png;base64,{Convert.ToBase64String(item.Thumbnail)}"
+                                : Url.Content("~/img/DefaultThumbnail.jpg");
+
+                                <li class="list-group-item">
+
+                                    <a asp-controller="@nameof(PostController)[..^10]"
+                                       asp-action="@nameof(PostController.Details)"
+                                       asp-route-id="@item.Id"
+                                       class="text-decoration-none">
+                                        <div class="row g-0">
+                                            <div class="col-md-3">
+                                                <div style="overflow: hidden; height: 80px;" class="d-flex justify-content-center">
+                                                    <img src="@imageDataURL" class="img-fluid rounded-start" alt="Image"
+                                                         style="max-height: 100%; min-height: 100%; object-fit: contain; object-position: center;">
+                                                </div>
+                                            </div>
+                                            <div class="col-md-9">
+                                                <div class="card-body py-0">
+                                                    <h5 class="card-title">@item.Title</h5>
+                                                    @* <p class="card-text">This is a wider card with supporting text below as a natural lead-in to additional content. This content is a little bit longer.</p> *@
+                                                    <p class="card-text"><small class="text-body-secondary">@item.CreatedAt.ToString("dd/MM/yyyy")</small></p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </a>
+
+                                    
+                                </li>
+                            }
+                        </ul>
+                    </div>
+
+
+                    <div class="card mb-2">
+                        <div class="card-body">
+                            <h5 class="card-title m-0">Từ khoá nổi bật</h5>
+                        </div>
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item">
+                                <div class="d-flex flex-wrap gap-2">
+                                    @foreach (var keyword in context.Keywords.OrderByDescending(k => k.SearchCount).Take(5))
+                                    {
+                                        <a asp-controller="@nameof(SearchController)[..^10]"
+                                           asp-action="@nameof(SearchController.Index)"
+                                           asp-route-query="@keyword.Key"
+                                           class="badge bg-secondary text-decoration-none px-3 py-2 fs-5">
+                                            @keyword.Key
+                                        </a>
+                                    }
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="card mb-2">
+                        <div class="card-body">
+                            <h5 class="card-title m-0">Góp ý mới nhất</h5>
+                        </div>
+                        <ul class="list-group list-group-flush">
+
+                            @foreach (var comment in context.CommentOnKeywords.OrderByDescending(c => c.UpdatedAt).Take(3))
+                            {
+                                <li class="list-group-item">
+                                    <strong>
+                                        <a asp-controller="@nameof(SearchController)[..^10]"
+                                           asp-action="@nameof(SearchController.Index)"
+                                           asp-route-query="@comment.Key">@comment.Key</a>
+                                    </strong>
+                                    <span>:</span>
+                                    <span>@comment.Content</span>
+                                </li>
+                            }
+
+                            
+                        </ul>
+                    </div>
+
+                    <div class="card mb-2">
+                        <div class="card-body">
+                            <h5 class="card-title m-0">Quản trị viên</h5>
+                        </div>
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item pb-4">
+                                <p class="mb-2"><strong>Bùi Hải Đăng</strong></p>
+                                <p class="mb-2">Giới tính: nam</p>
+                                <p class="mb-2">Sở thích: Nghe nhạc, học ngoại ngữ</p>
+                                <p class="mb-2">Bài hát yêu thích: <em>내 머리가 아빠서</em> của <em>SS501</em></p>
+                                <p class="mb-2">
+                                    <em>Ước mơ lớn nhất của đời tôi là đóng góp cho cuộc đời với một website hỗ trợ người Việt Nam học tiếng Hàn Quốc.</em>
+                                </p>
+                                <div class="ratio ratio-16x9">
+                                    <iframe src="https://www.youtube.com/embed/JZu0ldjo-3Q"
+                                            title="SS501 - 내 머리가 나빠서 [꽃보다 남자 OST] [가사/Lyrics]"
+                                            allowfullscreen
+                                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                            referrerpolicy="strict-origin-when-cross-origin">
+                                    </iframe>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+
+
+                </div>
+            </div>
+
+
+
+        </main>
+    </div>
+
+    <footer class="border-top footer text-muted" style="background-color: white;">
+        <div class="container">
+            &copy; 2025 - Swlh
+            <partial name="_FooterList" />
+            @* <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a> *@
+        </div>
+    </footer>
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

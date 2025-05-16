@@ -8,16 +8,19 @@
 @model PageResultDto<Post>
 
 @{
+    Layout = "_WithSideBar";
     ViewData["Title"] = "Danh sách bài viết";
 }
 
-<h1>Danh sách bài viết</h1>
+<div class="d-flex gap-2 flex-wrap align-items-center">
+    <h1>Danh sách bài viết</h1>
+    @if (Enum.TryParse(Context.Session.GetString("Role"), out Role role) && role == Role.Admin)
+    {
+        <a asp-controller="@nameof(PostController)[..^10]" asp-action="@nameof(PostController.Create)"
+           class="btn btn-success">Thêm mới</a>
+    }
+</div>
 
-@if (Enum.TryParse(Context.Session.GetString("Role"), out Role role) && role == Role.Admin)
-{
-    <a asp-controller="@nameof(PostController)[..^10]" asp-action="@nameof(PostController.Create)"
-    class="btn btn-success mb-3">Thêm mới</a>
-}
 
 <form class="mb-2" method="get">
 
@@ -148,9 +151,10 @@
 
         input.addEventListener('keydown', function (e) {
             if (e.key === 'Enter') {
-                e.preventDefault();
                 const value = input.value.trim();
-                if (!value) return;
+                if (!value) return; // Skip if empty
+                
+                e.preventDefault();
                 createTag(value);
                 input.value = '';
             }
@@ -163,7 +167,7 @@
     Guid.TryParse(Context.Session.GetString("Id"), out var id);
 }
 
-<div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 gx-1 mb-2">
+<div class="row row-cols-1 row-cols-md-2 row-cols-lg-2 row-cols-xxl-3 gx-1 mb-2">
     @foreach (var item in Model.Items)
     {
         <div class="col">
